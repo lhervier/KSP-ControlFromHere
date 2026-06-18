@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KSP — Control From Here — Maquette</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Titillium+Web:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-start;padding:40px 20px;min-height:100vh;gap:40px;flex-wrap:wrap}
+.kw{font-family:'Titillium Web',sans-serif;font-size:13px;background:#141414;border:1px solid #555;border-radius:3px;color:#ccc;width:340px;position:relative}
+
+/* Title bar */
+.ktb{background:#2e2e2e;border-bottom:1px solid #444;padding:5px 8px;display:flex;align-items:center;gap:6px}
+.ktitle{font-weight:600;font-size:12px;color:#e8e8e8;letter-spacing:.04em;text-transform:uppercase;flex:1}
+.kvessel{font-size:10px;color:#777;letter-spacing:.03em}
+.kbtn{background:#383838;border:1px solid #555;border-bottom:2px solid #333;color:#bbb;font-size:13px;width:20px;height:20px;border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Share Tech Mono',monospace}
+.kbtn:hover{background:#484848;color:#fff}
+
+/* Sub-header line */
+.kcount{padding:4px 10px;background:#1a1a1a;border-bottom:1px solid #222;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#777}
+.kcount strong{color:#aaa;font-weight:600}
+
+/* Command module rows */
+.klist{padding:3px 0 5px}
+.krow{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #1c1c1c}
+.krow:last-child{border-bottom:none}
+.krow:hover{background:rgba(255,255,255,.03)}
+.krow.active{background:rgba(141,190,69,.06)}
+.kicon{font-size:16px;width:20px;text-align:center;flex-shrink:0;color:#888}
+.krow.active .kicon{color:#8dbe45}
+.kinfo{flex:1;min-width:0}
+.kname{font-size:12px;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.kbadge{font-size:9px;color:#8dbe45;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid #4a6e20;padding:1px 5px;border-radius:2px;background:rgba(141,190,69,.1);flex-shrink:0}
+.kprio{font-size:9px;color:#7c93b0;font-weight:600;letter-spacing:.03em;border:1px solid #3a4a60;padding:1px 5px;border-radius:2px;background:rgba(124,147,176,.1);flex-shrink:0}
+.kpart{font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+
+/* Per-row actions */
+.kactions{display:flex;gap:4px;flex-shrink:0}
+.kact{background:#383838;border:1px solid #555;border-bottom:2px solid #333;color:#bbb;font-size:11px;height:24px;border-radius:2px;cursor:pointer;display:flex;align-items:center;gap:5px;padding:0 8px;font-family:'Titillium Web',sans-serif;white-space:nowrap}
+.kact:hover{background:#484848;color:#fff}
+.kact .ki{font-size:12px}
+.kact.primary{border-color:#4a6e20;color:#8dbe45}
+.kact.primary:hover{background:rgba(141,190,69,.15);color:#a9d96a}
+.kact.iconly{width:26px;justify-content:center;padding:0;font-size:13px}
+.kact[disabled]{opacity:.3;cursor:default}
+.kact[disabled]:hover{background:#383838;color:#bbb}
+.kact.primary[disabled]:hover{background:#383838;color:#8dbe45}
+
+/* Empty state */
+.kempty{padding:16px 12px;color:#777;font-size:12px;line-height:1.55;text-align:center}
+.kempty .kempty-title{display:block;color:#aaa;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+
+.note{width:340px;color:#666;font-size:11px;line-height:1.6;font-family:'Titillium Web',sans-serif}
+.note h3{color:#8dbe45;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.note code{font-family:'Share Tech Mono',monospace;color:#a98a4a}
+</style>
+</head>
+<body>
+
+<div class="kw">
+  <div class="ktb">
+    <span class="ktitle">🛰 Control From Here</span>
+    <!-- Global vessel name = vessel.vesselName (read as-is from KSP; never recomputed from priorities). -->
+    <span class="kvessel">Station Mun-1</span>
+    <button class="kbtn" title="Fermer">✕</button>
+  </div>
+  <div class="kcount">Modules de commande : <strong>5</strong></div>
+  <div class="klist" id="list"></div>
+</div>
+
+<div class="note">
+  <h3>Notes de maquette</h3>
+  Chaque ligne = un module de commande (cockpit, capsule, sonde, siège…) du vaisseau courant.<br><br>
+  • <strong style="color:#aaa">Gros texte</strong> = nom du vaisseau porté par le module (<code>part.vesselNaming.vesselName</code>) — distinct quand des vaisseaux sont dockés.<br>
+  • <strong style="color:#aaa">Sous-ligne</strong> = titre localisé de la pièce (<code>partInfo.title</code>).<br>
+  • Le tag <span style="color:#7c93b0">P50</span> = priorité de nommage (<code>namingPriority</code>) ; la plus haute donne son nom au vaisseau global.<br>
+  • Le badge <span style="color:#8dbe45">PILOTAGE</span> marque le module aux commandes (ligne surlignée).<br>
+  • <code>⚙</code> ouvre le PAW. <code>⌖</code> « Contrôler d'ici » : raccourci de « Control From Here ». Désactivé uniquement sur le module déjà aux commandes.
+</div>
+
+<script>
+// Each module of command on the current (docked) vessel.
+// Inclusion filter = part.FindModuleImplementing<ModuleCommand>() != null.
+// This naturally excludes docking ports (they expose "Control From Here" via
+// ModuleDockingNode, not ModuleCommand) while keeping command parts that have
+// no custom naming.
+// `name`       = vessel name carried by the part (part.vesselNaming?.vesselName ?? vessel.vesselName).
+// `part`       = localized part title (partInfo.title).
+// `icon`       = MOCKUP PLACEHOLDER only. Real UI uses the stock vessel-type sprite via the
+//                shared module: VesselTypeIcons.Get(part.vesselNaming?.vesselType ?? vessel.vesselType).
+// `prio`       = naming priority (vesselNaming.namingPriority); highest names the global vessel.
+// `active`     = the part currently controlling the vessel (ReferenceTransform).
+//                "Control From Here" stays always available in the PAW, so the only
+//                disabled state of the ⌖ button is "this module is already in control".
+// Sort: priority desc, then vessel name, then part title.
+const MODULES = [
+  {name: "Station Mun-1", part: "Module Cupola",              icon: "🛰", prio: 50, active: true},
+  {name: "Station Mun-1", part: "Cœur de sonde Probodobodyne OKTO2", icon: "📡", prio: 0, active: false},
+  {name: "Navette Eve",   part: "Capsule de commandement Mk1-3", icon: "🚀", prio: 30, active: false},
+  {name: "Remorqueur 7",  part: "Cœur de sonde RC-001S",      icon: "📶", prio: 10, active: false},
+  {name: "Station Mun-1", part: "Siège externe de commande",  icon: "💺", prio: 0},
+];
+
+// Priority desc, then vessel name, then part title (ties broken "au mieux").
+function sorted() {
+  return MODULES
+    .map((m, i) => ({m, i}))
+    .sort((a, b) => b.m.prio - a.m.prio
+                 || a.m.name.localeCompare(b.m.name)
+                 || a.m.part.localeCompare(b.m.part));
+}
+
+function render() {
+  const c = document.getElementById('list');
+  if (!MODULES.length) {
+    c.innerHTML = `<div class="kempty"><span class="kempty-title">Aucun module de commande</span>Ce vaisseau ne possède aucune pièce capable de prendre les commandes.</div>`;
+    return;
+  }
+  c.innerHTML = sorted().map(({m, i}) => `
+    <div class="krow ${m.active ? 'active' : ''}">
+      <span class="kicon">${m.icon}</span>
+      <div class="kinfo">
+        <div class="kname">${m.name} ${m.prio > 0 ? `<span class="kprio" title="Priorité de nommage">P${m.prio}</span>` : ''} ${m.active ? '<span class="kbadge">Pilotage</span>' : ''}</div>
+        <div class="kpart">${m.part}</div>
+      </div>
+      <div class="kactions">
+        <button class="kact iconly" title="Afficher le PAW" onclick="paw(${i})">⚙</button>
+        <button class="kact iconly primary" title="${m.active ? 'Déjà aux commandes' : "Contrôler d'ici"}" onclick="control(${i})" ${m.active ? 'disabled' : ''}>⌖</button>
+      </div>
+    </div>`).join('');
+}
+
+function paw(i) { alert("PAW → " + MODULES[i].name); }
+function control(i) {
+  MODULES.forEach((m, j) => m.active = (j === i));
+  render();
+}
+render();
+</script>
+</body>
+</html>

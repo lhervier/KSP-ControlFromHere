@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>KSP — Control From Here — Propositions d'icône</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a1a1a;color:#ccc;font-family:'Segoe UI',sans-serif;padding:30px;display:flex;flex-direction:column;gap:24px}
+h1{font-size:16px;font-weight:600;color:#e8e8e8}
+.intro{font-size:13px;color:#999;max-width:780px;line-height:1.5}
+.grid{display:flex;flex-wrap:wrap;gap:18px}
+.card{background:#242424;border:1px solid #333;border-radius:6px;padding:16px;width:230px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.card h2{font-size:13px;color:#8dbe45;font-weight:600}
+.card p{font-size:11px;color:#888;text-align:center;line-height:1.4;min-height:30px}
+/* The KSP app bar is a dark rounded button; preview the icon over it at native size + zoomed. */
+.appbar{display:flex;align-items:center;gap:16px}
+.btn{width:38px;height:38px;border-radius:6px;background:#3a3a3a;border:1px solid #555;display:flex;align-items:center;justify-content:center}
+.btn svg{width:32px;height:32px}
+.zoom{width:96px;height:96px;background:#111;border:1px solid #333;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.zoom svg{width:80px;height:80px}
+svg{display:block}
+svg .s{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg .sf{fill:#fff;stroke:none}
+svg .thin{stroke-width:1.6}
+</style>
+</head>
+<body>
+<h1>Propositions d'icône — barre d'application KSP</h1>
+<p class="intro">Toutes en blanc sur transparent, format cible 32×32 (comme l'icône de VesselBookmark). À gauche : rendu sur un bouton de barre d'app KSP (taille réelle). À droite : agrandissement ×2,5 pour juger le trait. Le thème « Control From Here » = point de référence / prise de commande.</p>
+<div class="grid" id="grid"></div>
+
+<script>
+// Each proposal is an inner SVG markup drawn in a 0..32 viewBox, white strokes.
+const ICONS = [
+  {
+    id: "A", title: "Réticule simple",
+    desc: "Cercle + croix de visée centrale. Le « point de référence » épuré.",
+    svg: `<circle class="s" cx="16" cy="16" r="9"/>
+          <line class="s" x1="16" y1="2" x2="16" y2="8"/>
+          <line class="s" x1="16" y1="24" x2="16" y2="30"/>
+          <line class="s" x1="2" y1="16" x2="8" y2="16"/>
+          <line class="s" x1="24" y1="16" x2="30" y2="16"/>
+          <circle class="sf" cx="16" cy="16" r="2.2"/>`
+  },
+  {
+    id: "B", title: "Réticule graduée",
+    desc: "Cercle avec encoches cardinales — évoque le navball / repère de contrôle.",
+    svg: `<circle class="s" cx="16" cy="16" r="10"/>
+          <line class="s" x1="16" y1="4" x2="16" y2="9"/>
+          <line class="s" x1="16" y1="23" x2="16" y2="28"/>
+          <line class="s" x1="4" y1="16" x2="9" y2="16"/>
+          <line class="s" x1="23" y1="16" x2="28" y2="16"/>
+          <circle class="sf" cx="16" cy="16" r="2"/>`
+  },
+  {
+    id: "C", title: "Cible concentrique",
+    desc: "Deux cercles + point central. Lecture « ici / focus » immédiate.",
+    svg: `<circle class="s" cx="16" cy="16" r="11"/>
+          <circle class="s thin" cx="16" cy="16" r="5.5"/>
+          <circle class="sf" cx="16" cy="16" r="2"/>`
+  },
+  {
+    id: "D", title: "Capsule + réticule",
+    desc: "Module de commande stylisé avec point de contrôle. Plus narratif.",
+    svg: `<path class="s" d="M9 22 L12 9 a4 4 0 0 1 8 0 L23 22 Z"/>
+          <line class="s" x1="9" y1="22" x2="23" y2="22"/>
+          <circle class="sf" cx="16" cy="14" r="1.8"/>`
+  },
+  {
+    id: "E", title: "Épingle « ici »",
+    desc: "Pin de localisation avec réticule. Insiste sur le « from HERE ».",
+    svg: `<path class="s" d="M16 29 C16 29 7 19 7 13 a9 9 0 0 1 18 0 C25 19 16 29 16 29 Z"/>
+          <line class="s thin" x1="16" y1="8" x2="16" y2="18"/>
+          <line class="s thin" x1="11" y1="13" x2="21" y2="13"/>`
+  },
+  {
+    id: "F", title: "Réticule + flèche",
+    desc: "Croix de visée avec une flèche : « prendre les commandes d'ici ».",
+    svg: `<circle class="s" cx="15" cy="17" r="8"/>
+          <line class="s" x1="15" y1="6" x2="15" y2="11"/>
+          <line class="s" x1="4" y1="17" x2="9" y2="17"/>
+          <line class="s" x1="15" y1="23" x2="15" y2="27"/>
+          <path class="s" d="M21 11 L28 4 M28 4 L23 4 M28 4 L28 9"/>`
+  },
+  {
+    id: "G", title: "Joystick",
+    desc: "Manche à boule sur son socle : le pilotage / la prise de commande.",
+    svg: `<circle class="sf" cx="16" cy="8" r="4"/>
+          <line class="s" x1="16" y1="12" x2="16" y2="21"/>
+          <path class="s" d="M8 27 L11 21 L21 21 L24 27 Z"/>`
+  },
+  {
+    id: "H", title: "Joystick + réticule",
+    desc: "Manche à boule avec un point de visée : pilotage + point de référence.",
+    svg: `<circle class="s" cx="16" cy="8" r="4"/>
+          <circle class="sf" cx="16" cy="8" r="1.4"/>
+          <line class="s" x1="16" y1="12" x2="16" y2="21"/>
+          <path class="s" d="M8 27 L11 21 L21 21 L24 27 Z"/>`
+  },
+];
+
+document.getElementById('grid').innerHTML = ICONS.map(ic => `
+  <div class="card">
+    <h2>${ic.id} — ${ic.title}</h2>
+    <div class="appbar">
+      <div class="btn"><svg viewBox="0 0 32 32">${ic.svg}</svg></div>
+      <div class="zoom"><svg viewBox="0 0 32 32">${ic.svg}</svg></div>
+    </div>
+    <p>${ic.desc}</p>
+  </div>`).join('');
+</script>
+</body>
+</html>
