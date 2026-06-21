@@ -73,7 +73,7 @@ Nom **global** du vaisseau = `vessel.vesselName`, **lu tel quel** depuis KSP.
   l'action PAW « Control From Here » — **appel direct de l'API**, jamais de clic simulé (cf. §8.1).
   Un seul état : **désactivé** sur le module **déjà aux commandes** (tooltip « Déjà aux commandes »).
   Pas d'autre grisage : dans le jeu, l'action « Control From Here » reste **toujours** présente dans
-  le PAW (même vaisseau non commandable) — confirmé par Lionel et par le décompilé (cf. §8.3).
+  le PAW (même vaisseau non commandable) — confirmé par Lionel (cf. §8.3).
 
 ---
 
@@ -107,7 +107,7 @@ Nom **global** du vaisseau = `vessel.vesselName`, **lu tel quel** depuis KSP.
 
 ---
 
-## 8. Détails techniques (investigués dans le décompilé `d:\ksp-decompiled`)
+## 8. Détails techniques
 
 > Décisions tranchées : (1) **siège externe** — on s'en tient strictement à `ModuleCommand` (un
 > `ExternalCommandSeat`/`KerbalSeat` ne porte pas de `ModuleCommand` et n'apparaîtra donc pas, c'est
@@ -119,7 +119,6 @@ Nom **global** du vaisseau = `vessel.vesselName`, **lu tel quel** depuis KSP.
 L'action PAW est portée par `ModuleCommand` :
 
 ```csharp
-// d:\ksp-decompiled\ModuleCommand.cs:763-767
 [KSPEvent(guiActive = true, guiName = "#autoLOC_6001360")]
 public virtual void MakeReference()
 {
@@ -133,14 +132,13 @@ invoquer exactement le code de l'event (et respecter d'éventuelles surcharges, 
 point courant). À préférer à un appel « brut » de `vessel.SetReferenceTransform(part)`.
 
 Pour mémoire, l'appel sous-jacent : `Vessel.SetReferenceTransform(Part p, bool storeRecall = true)`
-(`Vessel.cs:1419`) — pose `referenceTransformId = p.flightID`, `referenceTransformPart = p`, et
+— pose `referenceTransformId = p.flightID`, `referenceTransformPart = p`, et
 déclenche `GameEvents.onVesselReferenceTransformSwitch`. (Les sièges/ports de docking, hors scope,
 font en plus `part.SetReferenceTransform(controlTransform)` pour viser un transform custom.)
 
 ### 8.2 Module actuellement aux commandes (badge « Pilotage »)
 
 ```csharp
-// d:\ksp-decompiled\Vessel.cs:1414
 public Part GetReferenceTransformPart()  // -> referenceTransformPart
 ```
 
@@ -149,7 +147,7 @@ public Part GetReferenceTransformPart()  // -> referenceTransformPart
 
 ### 8.3 Pas de grisage lié au contrôle
 
-**Confirmé (Lionel + décompilé) : l'action « Control From Here » reste TOUJOURS présente dans le PAW**,
+**Confirmé (Lionel) : l'action « Control From Here » reste TOUJOURS présente dans le PAW**,
 y compris vaisseau non commandable. L'event `MakeReference` n'est jamais masqué (toujours
 `guiActive = true`, aucun `Events["MakeReference"].guiActive = …` dans `ModuleCommand`).
 
@@ -159,17 +157,17 @@ déjà aux commandes » (§4, via §8.2).
 
 ### 8.4 Rafraîchissement de la fenêtre
 
-Events `GameEvents` à écouter (vérifiés dans `d:\ksp-decompiled\GameEvents.cs`) :
+Events `GameEvents` à écouter :
 
-| Event | Signature | Ligne | Couvre |
-|---|---|---|---|
-| `onVesselChange` | `EventData<Vessel>` | 339 | changement de vaisseau actif |
-| `onVesselWasModified` | `EventData<Vessel>` | 369 | structure modifiée (inclut docking/undocking, ajout/retrait de pièces) |
-| `onVesselReferenceTransformSwitch` | `EventData<Transform, Transform>` | 345 | **changement du point de contrôle** (« Control From Here ») → badge « Pilotage » |
+| Event | Signature | Couvre |
+|---|---|---|
+| `onVesselChange` | `EventData<Vessel>` | changement de vaisseau actif |
+| `onVesselWasModified` | `EventData<Vessel>` | structure modifiée (inclut docking/undocking, ajout/retrait de pièces) |
+| `onVesselReferenceTransformSwitch` | `EventData<Transform, Transform>` | **changement du point de contrôle** (« Control From Here ») → badge « Pilotage » |
 
 - **Ensemble minimal** : les trois ci-dessus. `onVesselWasModified` suffit pour les
   docking/undocking (pas besoin de `onPartCouple`/`onPartUndock` séparés) ; `onVesselPartCountChanged`
-  (ligne 371) reste une option plus fine si nécessaire.
+  reste une option plus fine si nécessaire.
 - Plus de dépendance à l'état de contrôle (grisage supprimé) → pas besoin de
   `onVesselControlStateChange` ni de rafraîchissement périodique.
 - **Pattern d'abonnement** (style VesselBookmark) : `GameEvents.x.Add(handler)` dans `Start()`/
