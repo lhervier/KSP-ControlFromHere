@@ -35,14 +35,17 @@ namespace com.github.lhervier.ksp.controlfromheremod
                     continue;
                 }
 
-                // The module carries its own naming (name/type/priority) when the player named it;
-                // otherwise it falls back to the vessel's global name and type, with priority 0.
+                // A part's vesselNaming is non-null as soon as the part's .cfg declares a VESSELNAMING
+                // node, which most pods/probes do only to carry a stock default type (Probe, Ship...)
+                // with an empty name and priority 0. That default must NOT override the vessel's real
+                // name/type: the player named the module only when vesselName is non-empty. So the type
+                // and priority follow the same condition as the name (otherwise every command module
+                // would show its part's intrinsic type instead of the vessel's actual one).
                 VesselNaming naming = part.vesselNaming;
-                string vesselName = (naming != null && !string.IsNullOrEmpty(naming.vesselName))
-                    ? naming.vesselName
-                    : vessel.vesselName;
-                VesselType vesselType = naming != null ? naming.vesselType : vessel.vesselType;
-                int priority = naming != null ? naming.namingPriority : 0;
+                bool hasPlayerNaming = naming != null && !string.IsNullOrEmpty(naming.vesselName);
+                string vesselName = hasPlayerNaming ? naming.vesselName : vessel.vesselName;
+                VesselType vesselType = hasPlayerNaming ? naming.vesselType : vessel.vesselType;
+                int priority = hasPlayerNaming ? naming.namingPriority : 0;
 
                 result.Add(new CommandModuleInfo(
                     part,
