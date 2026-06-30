@@ -70,14 +70,14 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             Vessel vessel = FlightGlobals.ActiveVessel;
             if (vessel == null)
             {
-                BuildEmptyState(ModLocalization.GetString("labelNoVessel"));
+                BuildEmptyState(ModLocalization.GetString("CFHM_labelNoVessel"));
                 return;
             }
 
             List<CommandModuleInfo> modules = CommandModulesService.GetCommandModules(vessel);
             if (modules.Count == 0)
             {
-                BuildEmptyState(ModLocalization.GetString("labelNoCommandModules"));
+                BuildEmptyState(ModLocalization.GetString("CFHM_labelNoCommandModules"));
                 return;
             }
 
