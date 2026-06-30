@@ -196,7 +196,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 Palette.PrioBorderThickness,
                 Palette.PrioFontSize,
                 Palette.PrioPaddingH);
-            Tooltips.Attach(chip, ModLocalization.GetString("CFHM_tooltipPriority"));
+            Tooltips.Attach(chip, ModLocalization.GetString("tooltipPriority"));
         }
 
         private void BuildPilotingBadge(Transform parent)
@@ -204,7 +204,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             BuildChip(
                 parent,
                 "PilotingBadge",
-                ModLocalization.GetString("CFHM_badgePiloting").ToUpperInvariant(),
+                ModLocalization.GetString("badgePiloting").ToUpperInvariant(),
                 DefaultPalette.AccentColor,
                 DefaultPalette.AccentBgColor,
                 DefaultPalette.AccentBorderColor,
@@ -278,7 +278,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             paw.transform.SetParent(groupGo.transform, false);
             var info = _info;
             paw.OnClick.Add(() => CommandModulesService.ShowPaw(info));
-            Tooltips.Attach(paw.gameObject, ModLocalization.GetString("CFHM_tooltipPaw"));
+            Tooltips.Attach(paw.gameObject, ModLocalization.GetString("tooltipPaw"));
 
             // "Control from here" button (accent), disabled on the controlling module.
             ButtonController control = new ButtonBuilder()
@@ -295,7 +295,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             control.OnClick.Add(() => CommandModulesService.ControlFromHere(info));
             Tooltips.Attach(
                 control.gameObject,
-                ModLocalization.GetString(_info.IsActive ? "CFHM_tooltipAlreadyControlling" : "CFHM_tooltipControl"));
+                ModLocalization.GetString(_info.IsActive ? "tooltipAlreadyControlling" : "tooltipControl"));
         }
 
         private static GameObject NewHLine(Transform parent, string objectName)
