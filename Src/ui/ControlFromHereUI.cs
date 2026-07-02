@@ -17,6 +17,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
         private ApplicationLauncherButton _toolbarButton;
         private ControlWindow _window;
 
+        // Pulses/blinks the toolbar icon red when the active vessel is controlled off a command module.
+        private ToolbarWarningAnimator _warningAnimator;
+
         // Single source of truth for the displayed state; guards against the toolbar/window resync loop.
         private bool _visible;
 
@@ -31,9 +34,27 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
             LOGGER.LogInfo("Started");
         }
 
+        // Drive the toolbar warning animation once per frame from the active vessel's control point.
+        private void Update()
+        {
+            if (_warningAnimator == null)
+            {
+                return;
+            }
+            ControlStatus status = CommandModulesService.GetControlStatus(FlightGlobals.ActiveVessel);
+            _warningAnimator.Tick(status, Time.unscaledTime);
+        }
+
         private void OnDestroy()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(OnLauncherReady);
+
+            if (_warningAnimator != null)
+            {
+                _warningAnimator.Destroy();
+                _warningAnimator = null;
+            }
+
             RemoveToolbarButton();
 
             if (_window != null)
@@ -62,6 +83,8 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
                     null, null, null, null,
                     ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW,
                     GameDatabase.Instance.GetTexture(Constants.ModName + "/icon", false) ?? Texture2D.whiteTexture);
+
+                _warningAnimator = new ToolbarWarningAnimator(_toolbarButton);
             }
             catch (System.Exception e)
             {

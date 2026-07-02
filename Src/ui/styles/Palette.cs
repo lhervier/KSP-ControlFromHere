@@ -74,6 +74,13 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         public static readonly Color RowButtonHoverColor = Rgb(72, 72, 72);    // #484848
 
         // ==============================================================
+        // Toolbar warning (control point is not a command module)
+        // ==============================================================
+        // Warm alert red (Radix "red 9"), not a raw #FF0000. The toolbar icon is tinted toward this
+        // color: a gentle pulse when piloting off a command module, a hard blink when uncontrolled.
+        public static readonly Color WarningColor = Rgb(229, 72, 77);          // #e5484d
+
+        // ==============================================================
         // Empty state ("no command module")
         // ==============================================================
         public const int EmptyFontSize = 12;

@@ -4,6 +4,22 @@ using com.github.lhervier.ksp.shared;
 namespace com.github.lhervier.ksp.controlfromheremod
 {
     /// <summary>
+    /// Where the vessel's current control point (reference transform) sits, from the mod's point of view.
+    /// </summary>
+    public enum ControlStatus
+    {
+        /// <summary>The control point is a command module we list. Nothing to warn about.</summary>
+        OnCommandModule,
+
+        /// <summary>The control point is a part with no <see cref="ModuleCommand"/> — a docking port,
+        /// an external seat, a claw... The player may be piloting from an unexpected part.</summary>
+        OffCommandModule,
+
+        /// <summary>The vessel has no reference transform part at all: nothing is controlling it.</summary>
+        Uncontrolled
+    }
+
+    /// <summary>
     /// Reads the command modules of a vessel and performs the "Control From Here" action. A command
     /// module is a part bearing a <see cref="ModuleCommand"/>; docking ports (which expose "Control
     /// From Here" through ModuleDockingNode, not ModuleCommand) are therefore excluded.
@@ -11,6 +27,30 @@ namespace com.github.lhervier.ksp.controlfromheremod
     public static class CommandModulesService
     {
         private static readonly ModLogger LOGGER = new ModLogger("CommandModules");
+
+        /// <summary>
+        /// Classifies the vessel's current control point (<see cref="Vessel.GetReferenceTransformPart"/>)
+        /// against the command modules we list. Used to warn when the player might be piloting from an
+        /// unexpected part (typical after an undock). A null/empty vessel is treated as non-warning.
+        /// </summary>
+        public static ControlStatus GetControlStatus(Vessel vessel)
+        {
+            if (vessel == null || vessel.parts == null || vessel.parts.Count == 0)
+            {
+                return ControlStatus.OnCommandModule;
+            }
+
+            Part reference = vessel.GetReferenceTransformPart();
+            if (reference == null)
+            {
+                return ControlStatus.Uncontrolled;
+            }
+            if (reference.FindModuleImplementing<ModuleCommand>() == null)
+            {
+                return ControlStatus.OffCommandModule;
+            }
+            return ControlStatus.OnCommandModule;
+        }
 
         /// <summary>
         /// The command modules of the given vessel, sorted by naming priority (desc), then vessel name,
