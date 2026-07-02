@@ -47,9 +47,24 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 .kact[disabled]:hover{background:#383838;color:#bbb}
 .kact.primary[disabled]:hover{background:#383838;color:#8dbe45}
 
+/* External control point (docking port, or nothing — NOT a ModuleCommand of the list) */
+.krow.ext{background:rgba(200,150,60,.05);border-bottom:1px solid #2a2418}
+.krow.ext .kicon{color:#d0a24a;animation:blink 1.1s steps(1,end) infinite}
+@keyframes blink{50%{opacity:.2}}
+.krow.ext.none .kname{color:#8a8a8a;font-style:italic}
+.krow.ext.none .kicon{color:#7a7a7a}
+.kext-tag{font-size:9px;color:#d0a24a;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px dashed #6e5a20;padding:1px 5px;border-radius:2px;background:rgba(200,150,60,.1);flex-shrink:0}
+.kext-sep{padding:3px 10px;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#6a5a30;background:rgba(200,150,60,.04);border-bottom:1px solid #2a2418}
+
 /* Empty state */
 .kempty{padding:16px 12px;color:#777;font-size:12px;line-height:1.55;text-align:center}
 .kempty .kempty-title{display:block;color:#aaa;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Demo switcher */
+.demo-switch{width:340px;font-family:'Titillium Web',sans-serif;font-size:11px;color:#888;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px}
+.demo-switch button{background:#242424;border:1px solid #444;color:#bbb;font-size:11px;padding:3px 8px;border-radius:2px;cursor:pointer;font-family:'Titillium Web',sans-serif}
+.demo-switch button:hover{background:#333;color:#fff}
+.demo-switch button.on{border-color:#4a6e20;color:#8dbe45;background:rgba(141,190,69,.1)}
 
 .note{width:340px;color:#666;font-size:11px;line-height:1.6;font-family:'Titillium Web',sans-serif}
 .note h3{color:#8dbe45;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
@@ -57,6 +72,14 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 </style>
 </head>
 <body>
+
+<div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+<div class="demo-switch">
+  <span>Point de contrôle&nbsp;:</span>
+  <button id="sw-dock" onclick="setExt('dock')">🔗 Port d'amarrage</button>
+  <button id="sw-none" onclick="setExt('none')">⊘ Via rien</button>
+  <button id="sw-mod" onclick="setExt('module')">Un module de la liste</button>
+</div>
 
 <div class="kw">
   <div class="ktb">
@@ -68,6 +91,7 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
   <div class="kcount">Modules de commande : <strong>5</strong></div>
   <div class="klist" id="list"></div>
 </div>
+</div>
 
 <div class="note">
   <h3>Notes de maquette</h3>
@@ -77,6 +101,14 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
   • Le tag <span style="color:#7c93b0">P50</span> = priorité de nommage (<code>namingPriority</code>) ; la plus haute donne son nom au vaisseau global.<br>
   • Le badge <span style="color:#8dbe45">PILOTAGE</span> marque le module aux commandes (ligne surlignée).<br>
   • <code>⚙</code> ouvre le PAW. <code>⌖</code> « Contrôler d'ici » : raccourci de « Control From Here ». Désactivé uniquement sur le module déjà aux commandes.
+  <br><br>
+  <h3>Point de contrôle hors liste</h3>
+  Le vaisseau peut être piloté par un élément qui n'est <em>pas</em> un module de commande de la liste : un <strong style="color:#d0a24a">port d'amarrage</strong> (« Control From Here » exposé par <code>ModuleDockingNode</code>), ou <strong style="color:#d0a24a">rien du tout</strong> (contrôle perdu / pièce sans commande).<br><br>
+  • On l'épingle en <strong>haut de la liste</strong>, sur fond ambre avec le tag pointillé <span style="color:#d0a24a">Hors liste</span> et l'icône qui <strong>clignote</strong> — comme l'icône de l'appli quand le contrôle est hors liste.<br>
+  • Il garde le badge <span style="color:#8dbe45">Pilotage</span> (c'est bien lui aux commandes) mais n'offre <strong>pas</strong> de <code>⌖</code> : ce n'est pas un module de commande.<br>
+  • <span style="color:#d0a24a">Port d'amarrage</span> → le bouton <code>⚙</code> reste dispo et utile (le PAW existe). <span style="color:#8a8a8a">Via rien</span> → pas de pièce, donc <code>⚙</code> désactivé.<br>
+  • Un séparateur rappelle que les lignes suivantes sont les modules vers lesquels on <em>peut</em> basculer.<br><br>
+  <em style="color:#555">Utilisez les boutons « Point de contrôle » en haut pour prévisualiser chaque cas.</em>
 </div>
 
 <script>
@@ -95,12 +127,29 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 //                disabled state of the ⌖ button is "this module is already in control".
 // Sort: priority desc, then vessel name, then part title.
 const MODULES = [
-  {name: "Station Mun-1", part: "Module Cupola",              icon: "🛰", prio: 50, active: true},
+  {name: "Station Mun-1", part: "Module Cupola",              icon: "🛰", prio: 50, active: false},
   {name: "Station Mun-1", part: "Cœur de sonde Probodobodyne OKTO2", icon: "📡", prio: 0, active: false},
   {name: "Navette Eve",   part: "Capsule de commandement Mk1-3", icon: "🚀", prio: 30, active: false},
   {name: "Remorqueur 7",  part: "Cœur de sonde RC-001S",      icon: "📶", prio: 10, active: false},
   {name: "Station Mun-1", part: "Siège externe de commande",  icon: "💺", prio: 0},
 ];
+
+// The vessel's actual control point (ReferenceTransform) may NOT be a ModuleCommand
+// listed above. It can be:
+//   'dock' — a docking port (controlled via ModuleDockingNode's own "Control From Here").
+//            It's a real part, so its PAW is still reachable and useful.
+//   'none' — no usable control point (e.g. a part with no ModuleControlSurface control,
+//            or control was lost). No part → no PAW.
+// In the live UI the app icon blinks while control is off-list; the pinned row's icon
+// mirrors that with the same blink.
+// When one of the listed modules is in control instead, EXTERNAL is inactive.
+const EXTERNAL = {
+  active: true,          // is an off-list part currently in control?
+  kind: "dock",          // 'dock' | 'none'
+  name: "Station Mun-1", // vessel name carried by the control point (dock only)
+  part: "Port d'amarrage Clamp-O-Tron", // localized part title (dock only)
+  icon: "🔗",            // MOCKUP PLACEHOLDER — real UI uses the stock vessel-type sprite
+};
 
 // Priority desc, then vessel name, then part title (ties broken "au mieux").
 function sorted() {
@@ -111,13 +160,51 @@ function sorted() {
                  || a.m.part.localeCompare(b.m.part));
 }
 
+// Pinned row for the off-list control point, shown at the very top of the list
+// and visually set apart (amber accent, dashed "Hors liste" tag, blinking icon).
+// It carries the green "Pilotage" badge like any active row — it IS what controls
+// the vessel — but it is not a module of command, so it offers no "Contrôler d'ici".
+function extRow() {
+  if (!EXTERNAL.active) return '';
+  if (EXTERNAL.kind === 'none') {
+    return `
+    <div class="krow ext none">
+      <span class="kicon">⊘</span>
+      <div class="kinfo">
+        <div class="kname">Aucun point de contrôle <span class="kext-tag" title="Le vaisseau n'est piloté par aucune pièce">Hors liste</span> <span class="kbadge">Pilotage</span></div>
+        <div class="kpart">Le vaisseau n'est contrôlé par aucune pièce — aucun PAW disponible</div>
+      </div>
+      <div class="kactions">
+        <button class="kact iconly" title="Aucun PAW disponible" disabled>⚙</button>
+      </div>
+    </div>
+    <div class="kext-sep">Modules de commande disponibles</div>`;
+  }
+  return `
+    <div class="krow ext">
+      <span class="kicon">${EXTERNAL.icon}</span>
+      <div class="kinfo">
+        <div class="kname">${EXTERNAL.name} <span class="kext-tag" title="Le point de contrôle n'est pas un module de commande de la liste">Hors liste</span> <span class="kbadge">Pilotage</span></div>
+        <div class="kpart">${EXTERNAL.part}</div>
+      </div>
+      <div class="kactions">
+        <button class="kact iconly" title="Afficher le PAW" onclick="pawExt()">⚙</button>
+      </div>
+    </div>
+    <div class="kext-sep">Modules de commande disponibles</div>`;
+}
+
 function render() {
+  document.getElementById('sw-dock').classList.toggle('on', EXTERNAL.active && EXTERNAL.kind === 'dock');
+  document.getElementById('sw-none').classList.toggle('on', EXTERNAL.active && EXTERNAL.kind === 'none');
+  document.getElementById('sw-mod').classList.toggle('on', !EXTERNAL.active);
+
   const c = document.getElementById('list');
   if (!MODULES.length) {
     c.innerHTML = `<div class="kempty"><span class="kempty-title">Aucun module de commande</span>Ce vaisseau ne possède aucune pièce capable de prendre les commandes.</div>`;
     return;
   }
-  c.innerHTML = sorted().map(({m, i}) => `
+  c.innerHTML = extRow() + sorted().map(({m, i}) => `
     <div class="krow ${m.active ? 'active' : ''}">
       <span class="kicon">${m.icon}</span>
       <div class="kinfo">
@@ -132,8 +219,25 @@ function render() {
 }
 
 function paw(i) { alert("PAW → " + MODULES[i].name); }
+function pawExt() { alert("PAW → " + EXTERNAL.part); }
+
+// Taking control from a listed module deactivates the off-list control point.
 function control(i) {
+  EXTERNAL.active = false;
   MODULES.forEach((m, j) => m.active = (j === i));
+  render();
+}
+
+// Demo switcher: fake the current control point to preview each presentation.
+function setExt(kind) {
+  if (kind === 'module') {
+    EXTERNAL.active = false;
+    MODULES.forEach((m, j) => m.active = (j === 0));
+  } else {
+    EXTERNAL.active = true;
+    EXTERNAL.kind = kind;
+    MODULES.forEach(m => m.active = false);
+  }
   render();
 }
 render();

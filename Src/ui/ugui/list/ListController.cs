@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -15,6 +16,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
     public class ListController : MonoBehaviour
     {
         private static readonly ModLogger LOGGER = new ModLogger("List");
+
+        // Guards against stacking rebuild coroutines when several events fire in the same frame.
+        private bool _rebuildQueued;
 
         public void Start()
         {
@@ -41,18 +45,28 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
         // Methods bound to events
         // ============================================
 
-        private void OnVesselChange(Vessel vessel) => RebuildIfVisible();
-        private void OnVesselWasModified(Vessel vessel) => RebuildIfVisible();
-        private void OnReferenceTransformSwitch(Transform from, Transform to) => RebuildIfVisible();
+        private void OnVesselChange(Vessel vessel) => QueueRebuild();
+        private void OnVesselWasModified(Vessel vessel) => QueueRebuild();
+        private void OnReferenceTransformSwitch(Transform from, Transform to) => QueueRebuild();
 
-        private void RebuildIfVisible()
+        // Rebuild on the next frame rather than synchronously: onVesselReferenceTransformSwitch is
+        // fired by Vessel.SetReferenceTransform *before* it updates referenceTransformPart, so an
+        // immediate rebuild would read the old control point (and miss the switch to a docking port).
+        // A hidden window skips this and catches up through OnEnable on re-open.
+        private void QueueRebuild()
         {
-            // A hidden window catches up through OnEnable; no need to rebuild into the void.
-            if (!isActiveAndEnabled)
+            if (_rebuildQueued || !isActiveAndEnabled)
             {
                 return;
             }
-            Rebuild();
+            _rebuildQueued = true;
+            StartCoroutine(RebuildNextFrame());
+        }
+
+        private IEnumerator RebuildNextFrame()
+        {
+            yield return null;
+            Rebuild();   // clears _rebuildQueued
         }
 
         // =======================================
@@ -61,6 +75,8 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 
         private void Rebuild()
         {
+            _rebuildQueued = false;
+
             // Clear existing children.
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
@@ -74,6 +90,15 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 return;
             }
 
+            // Pinned row for the control point when it is not one of the listed command modules — the
+            // very situation that makes the toolbar icon blink (docking port, seat... or nothing at all).
+            OffListControlInfo offList = CommandModulesService.GetOffListControlPoint(vessel);
+            if (offList != null)
+            {
+                OffListRowController offRow = new OffListRowBuilder().WithInfo(offList).Build();
+                offRow.transform.SetParent(transform, false);
+            }
+
             List<CommandModuleInfo> modules = CommandModulesService.GetCommandModules(vessel);
             if (modules.Count == 0)
             {
@@ -81,12 +106,46 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 return;
             }
 
+            // Separate the pinned off-list row from the modules the player can actually switch to.
+            if (offList != null)
+            {
+                BuildSeparator(ModLocalization.GetString("labelAvailableModules"));
+            }
+
             foreach (CommandModuleInfo info in modules)
             {
                 RowController row = new RowBuilder().WithInfo(info).Build();
                 row.transform.SetParent(transform, false);
             }
-            LOGGER.LogDebug("Rebuilt list: " + modules.Count + " command module(s) for " + vessel.vesselName);
+            LOGGER.LogDebug("Rebuilt list: " + modules.Count + " command module(s) for " + vessel.vesselName
+                + (offList != null ? " (off-list control: " + offList.Status + ")" : ""));
+        }
+
+        // A thin caption row introducing the switchable modules under the pinned off-list row.
+        private void BuildSeparator(string message)
+        {
+            var go = new GameObject("Separator", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+
+            var layout = go.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(
+                Mathf.RoundToInt(Palette.RowPaddingH),
+                Mathf.RoundToInt(Palette.RowPaddingH),
+                Mathf.RoundToInt(Palette.SeparatorPaddingV),
+                Mathf.RoundToInt(Palette.SeparatorPaddingV));
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var labelGo = new GameObject("Label", typeof(RectTransform));
+            labelGo.transform.SetParent(go.transform, false);
+            var label = UGUILabels.AddLabel(labelGo);
+            label.text = message.ToUpperInvariant();
+            label.fontSize = Palette.SeparatorFontSize;
+            label.color = Palette.SeparatorTextColor;
+            label.alignment = TextAlignmentOptions.Left;
         }
 
         private void BuildEmptyState(string message)

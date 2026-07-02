@@ -53,6 +53,36 @@ namespace com.github.lhervier.ksp.controlfromheremod
         }
 
         /// <summary>
+        /// The off-list control point of the vessel — the part currently in control when it is not one
+        /// of the listed command modules — or null when the vessel is controlled from a command module
+        /// (nothing special to show then). Mirrors <see cref="GetControlStatus"/>: a non-null result is
+        /// returned exactly when the toolbar icon blinks (<see cref="ControlStatus.OffCommandModule"/> or
+        /// <see cref="ControlStatus.Uncontrolled"/>). The name/type follow the same rule as the modules:
+        /// the part's own naming only when the player actually named it.
+        /// </summary>
+        public static OffListControlInfo GetOffListControlPoint(Vessel vessel)
+        {
+            ControlStatus status = GetControlStatus(vessel);
+            if (status == ControlStatus.OnCommandModule)
+            {
+                return null;
+            }
+            if (status == ControlStatus.Uncontrolled)
+            {
+                return new OffListControlInfo(status, null, null, null, VesselType.Unknown);
+            }
+
+            // OffCommandModule: the reference part exists but bears no ModuleCommand.
+            Part reference = vessel.GetReferenceTransformPart();
+            VesselNaming naming = reference.vesselNaming;
+            bool hasPlayerNaming = naming != null && !string.IsNullOrEmpty(naming.vesselName);
+            string vesselName = hasPlayerNaming ? naming.vesselName : vessel.vesselName;
+            VesselType vesselType = hasPlayerNaming ? naming.vesselType : vessel.vesselType;
+            string partTitle = reference.partInfo != null ? reference.partInfo.title : reference.name;
+            return new OffListControlInfo(status, reference, vesselName, partTitle, vesselType);
+        }
+
+        /// <summary>
         /// The command modules of the given vessel, sorted by naming priority (desc), then vessel name,
         /// then part title. Empty list when the vessel is null or has no command module.
         /// </summary>
@@ -131,12 +161,22 @@ namespace com.github.lhervier.ksp.controlfromheremod
         /// </summary>
         public static void ShowPaw(CommandModuleInfo info)
         {
-            if (info == null || info.Part == null || UIPartActionController.Instance == null)
+            if (info != null)
+            {
+                ShowPaw(info.Part);
+            }
+        }
+
+        /// <summary>Open the part action window (PAW) of the given part. No-op on a null part or when
+        /// the part action controller is not available.</summary>
+        public static void ShowPaw(Part part)
+        {
+            if (part == null || UIPartActionController.Instance == null)
             {
                 return;
             }
-            LOGGER.LogDebug("Show PAW for part " + info.PartTitle);
-            UIPartActionController.Instance.SpawnPartActionWindow(info.Part);
+            LOGGER.LogDebug("Show PAW for part " + (part.partInfo != null ? part.partInfo.title : part.name));
+            UIPartActionController.Instance.SpawnPartActionWindow(part);
         }
     }
 }

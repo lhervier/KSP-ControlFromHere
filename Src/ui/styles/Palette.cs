@@ -74,6 +74,21 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         public static readonly Color RowButtonHoverColor = Rgb(72, 72, 72);    // #484848
 
         // ==============================================================
+        // Off-list control-point row (docking port, seat... or nothing)
+        // ==============================================================
+        // Amber, orthogonal to the green "piloting" accent: green = in control, amber = off the list.
+        public static readonly Color OffListAccentColor = Rgb(208, 162, 74);   // #d0a24a
+        public static readonly Color OffListRowBgColor = Rgba(200, 150, 60, 0.05f);
+        public static readonly Color OffListTagBgColor = Rgba(200, 150, 60, 0.10f);
+        public static readonly Color OffListTagBorderColor = Rgb(110, 90, 32); // #6e5a20
+        public static readonly Color OffListMutedColor = Rgb(138, 138, 138);   // #8a8a8a (uncontrolled name)
+
+        // Caption separating the pinned off-list row from the switchable modules
+        public const int SeparatorFontSize = 9;
+        public const float SeparatorPaddingV = 3f;
+        public static readonly Color SeparatorTextColor = Rgb(106, 90, 48);    // #6a5a30
+
+        // ==============================================================
         // Toolbar warning (control point is not a command module)
         // ==============================================================
         // Warm alert red (Radix "red 9"), not a raw #FF0000. The toolbar icon is tinted toward this

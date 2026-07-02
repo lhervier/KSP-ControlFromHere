@@ -11,22 +11,23 @@ using com.github.lhervier.ksp.shared.ugui.styles;
 namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 {
     /// <summary>
-    /// One command-module row: vessel-type icon, vessel name (+ priority tag + "Piloting" badge) over the
-    /// localized part title, and the two action buttons (⚙ show PAW, ⌖ control from here). The control
-    /// button is disabled on the module already in control. The controlling module's row is tinted.
+    /// The special row for the vessel's off-list control point — a part with no <see cref="ModuleCommand"/>
+    /// (docking port, external seat, claw...) or nothing at all. Pinned at the top of the list and set
+    /// apart with an amber accent (bar, tint, "Off-list" tag), mirroring the toolbar icon that blinks in
+    /// the same situation. It carries the "Piloting" badge (it is what controls the vessel) but offers no
+    /// "Control from here": it is not a command module. The ⚙ "Show PAW" button stays useful when there is
+    /// a part, and is disabled when the vessel is uncontrolled (no part → no PAW). The icon is neutral.
     /// </summary>
-    public class RowBuilder : IUGUIBuilder<RowController>
+    public class OffListRowBuilder : IUGUIBuilder<OffListRowController>
     {
-        // No gear/crosshair glyph is guaranteed in the game SDF font; pick the first the font can render.
-        private static string PawGlyph => DefaultPalette.PickGlyph("⚙", "☰", "≡", "P");          // ⚙ ☰ ≡
-        private static string ControlGlyph => DefaultPalette.PickGlyph("⌖", "◎", "◉", "⊕", "C"); // ⌖ ◎ ◉ ⊕
+        private static string PawGlyph => DefaultPalette.PickGlyph("⚙", "☰", "≡", "P");
 
         // ===========================================
         // Builder parameters
         // ===========================================
 
-        private CommandModuleInfo _info;
-        public RowBuilder WithInfo(CommandModuleInfo info)
+        private OffListControlInfo _info;
+        public OffListRowBuilder WithInfo(OffListControlInfo info)
         {
             this._info = info;
             return this;
@@ -36,15 +37,14 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
         // Build
         // ===========================================
 
-        public RowController Build()
+        public OffListRowController Build()
         {
-            var rowGo = new GameObject("Row", typeof(RectTransform));
+            var rowGo = new GameObject("OffListRow", typeof(RectTransform));
 
-            // Background (tinted on the controlling module).
             var bg = rowGo.AddComponent<Image>();
             bg.sprite = SpritesGlobal.FillSprite;
             bg.type = Image.Type.Simple;
-            bg.color = _info.IsActive ? Palette.RowActiveBgColor : Color.clear;
+            bg.color = Palette.OffListRowBgColor;
             bg.raycastTarget = true;
 
             var layout = rowGo.AddComponent<HorizontalLayoutGroup>();
@@ -60,18 +60,17 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            // Left accent bar on the controlling module (overlaid, out of layout).
-            if (_info.IsActive)
-            {
-                RowElements.BuildAccentBar(rowGo.transform, DefaultPalette.AccentColor);
-            }
+            RowElements.BuildAccentBar(rowGo.transform, Palette.OffListAccentColor);
 
-            // Stock vessel-type sprite from the shared module; the box stays empty when unavailable.
+            // Stock vessel-type sprite of the control point (a docking port shows its own icon); the
+            // info carries VesselType.Unknown when uncontrolled, giving a neutral icon. Box stays empty
+            // when the sprite is unavailable.
             RowElements.BuildIconBox(rowGo.transform, VesselTypeIcons.Get(_info.VesselType));
+
             BuildInfoColumn(rowGo.transform);
             BuildActions(rowGo.transform);
 
-            return rowGo.AddComponent<RowController>();
+            return rowGo.AddComponent<OffListRowController>();
         }
 
         // ===========================================
@@ -80,6 +79,8 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 
         private void BuildInfoColumn(Transform parent)
         {
+            bool uncontrolled = _info.Status == ControlStatus.Uncontrolled;
+
             var colGo = new GameObject("Info", typeof(RectTransform));
             colGo.transform.SetParent(parent, false);
             var colLe = colGo.AddComponent<LayoutElement>();
@@ -94,7 +95,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             colLayout.childForceExpandWidth = true;
             colLayout.childForceExpandHeight = false;
 
-            // Line 1: vessel name (greedy) + priority tag + "Piloting" badge.
+            // Line 1: name (greedy) + "Off-list" tag + "Piloting" badge (only when something controls).
             var line1 = NewHLine(colGo.transform, "Line1");
             line1.GetComponent<HorizontalLayoutGroup>().spacing = DefaultPalette.Spacing;
 
@@ -103,45 +104,43 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             var nameLe = nameGo.AddComponent<LayoutElement>();
             nameLe.flexibleWidth = 1f;
             var name = UGUILabels.AddLabel(nameGo);
-            name.text = _info.VesselName;
+            name.text = uncontrolled ? ModLocalization.GetString("labelUncontrolledName") : _info.VesselName;
             name.fontSize = Palette.NameFontSize;
-            name.color = Palette.NameColor;
+            name.color = uncontrolled ? Palette.OffListMutedColor : Palette.NameColor;
+            name.fontStyle = uncontrolled ? FontStyles.Italic : FontStyles.Normal;
             name.alignment = TextAlignmentOptions.Left;
             name.overflowMode = TextOverflowModes.Ellipsis;
 
-            if (_info.NamingPriority > 0)
-            {
-                BuildPriorityTag(line1.transform);
-            }
-            if (_info.IsActive)
+            BuildOffListTag(line1.transform);
+            if (!uncontrolled)
             {
                 BuildPilotingBadge(line1.transform);
             }
 
-            // Line 2: localized part title.
+            // Line 2: part title, or the "uncontrolled" explanation.
             var titleGo = new GameObject("PartTitle", typeof(RectTransform));
             titleGo.transform.SetParent(colGo.transform, false);
             var title = UGUILabels.AddLabel(titleGo);
-            title.text = _info.PartTitle;
+            title.text = uncontrolled ? ModLocalization.GetString("labelUncontrolledDesc") : _info.PartTitle;
             title.fontSize = Palette.PartTitleFontSize;
             title.color = Palette.PartTitleColor;
             title.alignment = TextAlignmentOptions.Left;
             title.overflowMode = TextOverflowModes.Ellipsis;
         }
 
-        private void BuildPriorityTag(Transform parent)
+        private void BuildOffListTag(Transform parent)
         {
             GameObject chip = RowElements.BuildChip(
                 parent,
-                "PriorityTag",
-                "P" + _info.NamingPriority,
-                Palette.PrioTextColor,
-                Palette.PrioBgColor,
-                Palette.PrioBorderColor,
-                Palette.PrioBorderThickness,
-                Palette.PrioFontSize,
-                Palette.PrioPaddingH);
-            Tooltips.Attach(chip, ModLocalization.GetString("tooltipPriority"));
+                "OffListTag",
+                ModLocalization.GetString("badgeOffList").ToUpperInvariant(),
+                Palette.OffListAccentColor,
+                Palette.OffListTagBgColor,
+                Palette.OffListTagBorderColor,
+                Palette.BadgeBorderThickness,
+                Palette.BadgeFontSize,
+                Palette.BadgePaddingH);
+            Tooltips.Attach(chip, ModLocalization.GetString("tooltipOffList"));
         }
 
         private void BuildPilotingBadge(Transform parent)
@@ -171,36 +170,27 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            // "Show PAW" button.
+            bool hasPaw = _info.Part != null;
+
+            // "Show PAW" button: useful on a real part, disabled when the vessel is uncontrolled.
             ButtonController paw = new ButtonBuilder()
                 .WithObjectName("ShowPaw")
                 .WithLabel(PawGlyph)
+                .WithInteractableState(hasPaw)
                 .WithSize(Palette.RowButtonSize)
                 .WithFontSize(Palette.RowButtonFontSize)
                 .WithBackgroundColor(Palette.RowButtonBgColor)
                 .WithHoverColor(Palette.RowButtonHoverColor)
                 .Build();
             paw.transform.SetParent(groupGo.transform, false);
-            var info = _info;
-            paw.OnClick.Add(() => CommandModulesService.ShowPaw(info));
-            Tooltips.Attach(paw.gameObject, ModLocalization.GetString("tooltipPaw"));
-
-            // "Control from here" button (accent), disabled on the controlling module.
-            ButtonController control = new ButtonBuilder()
-                .WithObjectName("ControlFromHere")
-                .WithLabel(ControlGlyph)
-                .WithInteractableState(!_info.IsActive)
-                .WithSize(Palette.RowButtonSize)
-                .WithFontSize(Palette.RowButtonFontSize)
-                .WithBackgroundColor(Palette.RowButtonBgColor)
-                .WithHoverColor(Palette.RowButtonHoverColor)
-                .WithTextColor(DefaultPalette.AccentColor)
-                .Build();
-            control.transform.SetParent(groupGo.transform, false);
-            control.OnClick.Add(() => CommandModulesService.ControlFromHere(info));
+            if (hasPaw)
+            {
+                Part part = _info.Part;
+                paw.OnClick.Add(() => CommandModulesService.ShowPaw(part));
+            }
             Tooltips.Attach(
-                control.gameObject,
-                ModLocalization.GetString(_info.IsActive ? "tooltipAlreadyControlling" : "tooltipControl"));
+                paw.gameObject,
+                ModLocalization.GetString(hasPaw ? "tooltipPaw" : "tooltipNoPaw"));
         }
 
         private static GameObject NewHLine(Transform parent, string objectName)
