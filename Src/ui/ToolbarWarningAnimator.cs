@@ -7,13 +7,9 @@ using com.github.lhervier.ksp.shared;
 namespace com.github.lhervier.ksp.controlfromheremod.ui
 {
     /// <summary>
-    /// Animates the toolbar button to warn when the vessel's control point is not a command module,
-    /// so the player notices they are piloting from an unexpected part (typically after an undock):
-    /// <list type="bullet">
-    /// <item><see cref="ControlStatus.OffCommandModule"/> (docking port, seat...) → gentle red pulse.</item>
-    /// <item><see cref="ControlStatus.Uncontrolled"/> (nothing controls the vessel) → hard red blink.</item>
-    /// <item><see cref="ControlStatus.OnCommandModule"/> → the plain, unmodified icon.</item>
-    /// </list>
+    /// Blinks the toolbar button red while the thrust circuit breaker is tripped, so the player notices the
+    /// throttle has been cut even with the window closed: a hard red blink when tripped, the plain icon
+    /// otherwise.
     /// Self-contained: it builds red-tinted frames from the mod's own icon PNG (loaded as a *readable*
     /// texture from disk, since the GameDatabase copy usually is not) and swaps them via
     /// <see cref="ApplicationLauncherButton.SetTexture"/>. If the icon can't be read it stays idle.
@@ -24,8 +20,6 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
 
         // Gradient resolution from the plain icon (frame 0) to full warning red (last frame).
         private const int FrameCount = 16;
-        private const float PulsePeriodSeconds = 1.4f;   // one full breathe cycle (OffCommandModule)
-        private const float BlinkPeriodSeconds = 0.9f;   // one full on/off cycle (Uncontrolled)
 
         private readonly ApplicationLauncherButton _button;
         private readonly Texture2D _baseTexture;         // frame 0, the untouched icon
@@ -46,34 +40,22 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
         private bool IsReady => _button != null && _frames != null;
 
         /// <summary>
-        /// Update the icon for the current control status. <paramref name="time"/> should be
-        /// <see cref="Time.unscaledTime"/> so the animation is smooth regardless of time warp / pause.
+        /// Update the icon for the breaker state: a hard red blink while <paramref name="tripped"/>, the
+        /// plain icon otherwise. <paramref name="time"/> should be <see cref="Time.unscaledTime"/> so the
+        /// blink stays smooth regardless of time warp / pause.
         /// </summary>
-        public void Tick(ControlStatus status, float time)
+        public void Tick(bool tripped, float time)
         {
             if (!IsReady)
             {
                 return;
             }
 
-            int index;
-            switch (status)
+            int index = 0; // plain icon
+            if (tripped)
             {
-                case ControlStatus.OffCommandModule:
-                    // Smooth "breathing": sine over the whole gradient.
-                    float phase = (Mathf.Sin(time / PulsePeriodSeconds * 2f * Mathf.PI) + 1f) * 0.5f;
-                    index = Mathf.RoundToInt(phase * (FrameCount - 1));
-                    break;
-
-                case ControlStatus.Uncontrolled:
-                    // Hard blink: full red for half the cycle, plain icon the other half.
-                    bool on = (time % BlinkPeriodSeconds) < (BlinkPeriodSeconds * 0.5f);
-                    index = on ? FrameCount - 1 : 0;
-                    break;
-
-                default:
-                    index = 0; // plain icon
-                    break;
+                // Hard blink: full red for half the cycle, plain icon the other half (shared cadence).
+                index = WarningBlink.IsOn(time) ? FrameCount - 1 : 0;
             }
 
             Apply(index);

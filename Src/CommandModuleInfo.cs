@@ -34,6 +34,11 @@ namespace com.github.lhervier.ksp.controlfromheremod
         /// part offers a single control point — matching the PAW, which hides its "Control Point" entry then.</summary>
         public string ControlPointLabel { get; }
 
+        /// <summary>True when, in its active orientation, this module's control-forward matches the thrust
+        /// direction that tripped the circuit breaker — i.e. taking control from here would realign the
+        /// vessel. Always false when the breaker is not tripped.</summary>
+        public bool IsAligned { get; }
+
         public CommandModuleInfo(
             Part part,
             ModuleCommand command,
@@ -42,7 +47,8 @@ namespace com.github.lhervier.ksp.controlfromheremod
             int namingPriority,
             VesselType vesselType,
             bool isActive,
-            string controlPointLabel)
+            string controlPointLabel,
+            bool isAligned)
         {
             this.Part = part;
             this.Command = command;
@@ -52,6 +58,7 @@ namespace com.github.lhervier.ksp.controlfromheremod
             this.VesselType = vesselType;
             this.IsActive = isActive;
             this.ControlPointLabel = controlPointLabel;
+            this.IsAligned = isAligned;
         }
     }
 }

@@ -105,10 +105,84 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         public static readonly Color SeparatorTextColor = Rgb(106, 90, 48);    // #6a5a30
 
         // ==============================================================
-        // Toolbar warning (control point is not a command module)
+        // Command-modules count sub-header (fixed, between banner and list)
+        // ==============================================================
+        public static readonly Color CountBgColor = Rgb(21, 21, 21);           // #151515
+        public const int CountFontSize = 10;
+        public const float CountPaddingH = 10f;
+        public const float CountPaddingV = 4f;
+        public static readonly Color CountTextColor = Rgb(136, 136, 136);      // #888
+        public const float CountSeparatorThickness = 1f;
+        public static readonly Color CountSeparatorColor = Rgb(34, 34, 34);    // #222
+
+        // ==============================================================
+        // Circuit-breaker banner (always visible, top of the window)
+        // ==============================================================
+        public static readonly Color BannerBgColor = Rgb(26, 26, 26);          // #1a1a1a
+        public const float BannerPaddingH = 10f;
+        public const float BannerPaddingV = 6f;
+        public const float BannerSpacing = 8f;
+
+        // "⚡ Disjoncteur" label (dimmed when disabled)
+        public const int BannerLabelFontSize = 10;
+        public static readonly Color BannerLabelColor = Rgb(136, 136, 136);    // #888
+        public static readonly Color BannerLabelDisabledColor = Rgb(90, 90, 90); // #5a5a5a
+
+        // Master enable switch (green when enabled, grey when disabled)
+        public const int BannerSwitchFontSize = 11;
+        public const float BannerSwitchPaddingH = 9f;
+        public static readonly Color BannerSwitchOnText = Rgb(141, 190, 69);    // #8dbe45
+        public static readonly Color BannerSwitchOnBg = Rgba(141, 190, 69, 0.12f);
+        public static readonly Color BannerSwitchOnBorder = Rgb(74, 110, 32);   // #4a6e20
+        public static readonly Color BannerSwitchOffText = Rgb(138, 138, 138);  // #8a8a8a
+        public static readonly Color BannerSwitchOffBg = Rgb(36, 36, 36);       // #242424
+        public static readonly Color BannerSwitchOffBorder = Rgb(68, 68, 68);   // #444
+
+        // Arm-state pill / idle caption
+        public const int BannerStateFontSize = 11;
+        public static readonly Color BannerArmedColor = Rgb(141, 190, 69);      // #8dbe45
+        public static readonly Color BannerTrippedColor = Rgb(224, 96, 58);     // #e0603a
+        public static readonly Color BannerIdleColor = Rgb(90, 90, 90);         // #5a5a5a
+
+        // Threshold stepper (Seuil − 5° +)
+        public const int BannerThresholdFontSize = 10;
+        public const int BannerThresholdValueFontSize = 12;
+        public const float BannerStepButtonSize = 16f;
+        public static readonly Color BannerThresholdValueColor = Rgb(203, 176, 106); // #cbb06a
+        public static readonly Color BannerStepBgColor = Rgb(44, 44, 44);       // #2c2c2c
+        public static readonly Color BannerStepHoverColor = Rgb(60, 60, 60);    // #3c3c3c
+        public static readonly Color BannerStepTextColor = Rgb(170, 170, 170);  // #aaa
+
+        // Trip alert row
+        public const float BannerAlertPaddingH = 10f;
+        public const float BannerAlertPaddingV = 8f;
+        public static readonly Color BannerAlertBgColor = Rgba(224, 96, 58, 0.09f);
+        public const int BannerAlertMsgFontSize = 11;
+        public static readonly Color BannerAlertMsgColor = Rgb(236, 138, 106);  // #ec8a6a
+        public const int BannerRecoLabelFontSize = 10;
+        public static readonly Color BannerRecoLabelColor = Rgb(154, 138, 128); // #9a8a80
+
+        // Inline "Rearm" mini button (green accent)
+        public const int BannerMiniFontSize = 10;
+        public const float BannerMiniPaddingH = 8f;
+        public const float BannerMiniHeight = 18f;
+        public static readonly Color BannerMiniBgColor = Rgb(51, 51, 51);       // #333
+        public static readonly Color BannerMiniHoverColor = Rgb(69, 69, 69);    // #454545
+        public static readonly Color BannerMiniTextColor = Rgb(141, 190, 69);   // #8dbe45
+
+        // "✓ Aligné" chip on a suggested module row (while tripped)
+        public const int AlignedFontSize = 9;
+        public const float AlignedPaddingH = 5f;
+        public const int AlignedBorderThickness = 1;
+        public static readonly Color AlignedTextColor = Rgb(169, 217, 106);     // #a9d96a
+        public static readonly Color AlignedBgColor = Rgba(141, 190, 69, 0.12f);
+        public static readonly Color AlignedBorderColor = Rgb(74, 110, 32);     // #4a6e20
+
+        // ==============================================================
+        // Toolbar warning (thrust breaker tripped)
         // ==============================================================
         // Warm alert red (Radix "red 9"), not a raw #FF0000. The toolbar icon is tinted toward this
-        // color: a gentle pulse when piloting off a command module, a hard blink when uncontrolled.
+        // color and hard-blinks while the thrust circuit breaker is tripped.
         public static readonly Color WarningColor = Rgb(229, 72, 77);          // #e5484d
 
         // ==============================================================

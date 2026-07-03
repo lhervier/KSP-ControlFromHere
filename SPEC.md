@@ -19,6 +19,11 @@ courant, avec deux actions par module :
 
 Le module qui contrôle actuellement le vaisseau est marqué d'un badge.
 
+Le mod embarque aussi un **disjoncteur de poussée** (§9) : il coupe et **verrouille** les moteurs
+quand on accélère alors que la poussée réelle n'est pas alignée avec le sens de contrôle du vaisseau,
+et propose de reprendre le contrôle depuis le bon module. Activable/désactivable, réglage global
+persisté.
+
 Maquette de référence : [mockup.html](mockup.html). Icône de barre d'app validée :
 [icon.png](icon.png) (joystick blanc 32×32).
 
@@ -175,7 +180,120 @@ Events `GameEvents` à écouter :
 
 ---
 
-## 9. Fichiers jetables (à nettoyer)
+## 9. Disjoncteur de poussée
+
+Fonction ajoutée à *ce* mod (pas un mod séparé) : la solution à un désalignement poussée/contrôle est
+précisément « prendre le contrôle depuis le bon module de commande », le cœur de métier du mod. Le
+disjoncteur crée le besoin « au bon moment », la liste offre l'action qui le résout. Maquette de
+référence : [mockup.html](mockup.html) (bandeau toujours visible + 3 états).
+
+### 9.1 Terminologie (verrouillé)
+
+- **Activé** = le disjoncteur est en place et surveille. Réglage **global**, **persisté entre
+  scènes/sessions**.
+- **Armé** = le disjoncteur est « en haut », poussée autorisée. N'a de sens que si activé.
+- **Désarmé** = disjoncteur « tombé », poussée coupée et **verrouillée à 0**. **Ne peut résulter que
+  d'un déclenchement automatique** — il n'y a **pas** de désarmement manuel (pour ne plus être gêné,
+  on désactive : inutile de pouvoir verrouiller sa propre poussée à la main).
+
+### 9.2 Détection — réactive, sur la poussée réelle (verrouillé)
+
+Principe : n'agir que **pendant** la combustion, sur la poussée **réellement appliquée**, jamais sur
+une poussée prédite.
+
+- Hook : `Vessel.OnFlyByWire` (`FlightInputCallback`) sur le vaisseau actif — reçoit le
+  `FlightCtrlState` mutable.
+- **Vecteur de poussée réel** = `Σ (-thrustTransform.forward) × finalThrust` sur les `ModuleEngines`
+  (la force réellement appliquée : `ModuleEngines.cs` fait `AddForceAtPosition(-transform.forward *
+  finalThrust ...)`).
+- **Sens de contrôle** = `vessel.ReferenceTransform.up` (axe « avant » du navball :
+  `FlightGlobals.cs` `LookRotation(referenceTransform.up, -referenceTransform.forward)`).
+- **Déclenchement** si `mainThrottle > 0`, poussée réelle non nulle, et
+  `Vector3.Angle(pousséeRéelle, ReferenceTransform.up) > seuil`.
+
+Pourquoi réactif et pas prédictif : lire `finalThrust` évite **tous** les cas durs de la prédiction
+— moteur activé/allumé/étagé, efficacité atmo (Eve), carburant épuisé : un moteur qui ne pousse pas a
+`finalThrust ≈ 0` et ne compte pas, gratuitement. (Approches prédictives via `VesselDeltaV`,
+`ModuleEngines.MaxThrustOutputAtm` et `IThrustProvider.OnCenterOfThrustQuery` explorées puis
+**écartées** — inutiles ici, et `VesselDeltaV` dépend en plus du réglage `DELTAV_CALCULATIONS_ENABLED`.)
+
+### 9.3 Orientations de contrôle (verrouillé)
+
+`ReferenceTransform.up` reflète **déjà** le point de contrôle actif (OKTO2 « inversé », cabine
+« devant »/« dessus »…) : choisir un control point fait `part.SetReferenceTransform(controlPoint.
+transform)` (`ModuleCommand.cs`, `SetControlPoint`). Donc **rien à énumérer** — le transform de
+référence courant porte la bonne orientation.
+
+### 9.4 Coupure & verrou (latch) (verrouillé)
+
+- Au déclenchement : throttle **persistant** mis à 0 comme la touche X —
+  `FlightInputHandler.state.mainThrottle = 0f` (`FlightInputHandler.cs`, `state` est un
+  `public static FlightCtrlState`) — pour que le réarmement reparte **de 0**.
+- Tant que désarmé : on force aussi `s.mainThrottle = 0f` à chaque frame dans `OnFlyByWire` (couvre
+  une tentative de remettre les gaz).
+- L'état reste **verrouillé** jusqu'à un réarmement explicite (§9.7).
+
+### 9.5 Snapshot au déclenchement (verrouillé — piège)
+
+Une fois désarmé, le throttle est à 0 → **plus aucune poussée réelle à lire** (`finalThrust = 0`
+partout). On **fige (snapshot) la direction de poussée fautive à l'instant du déclenchement**. Ce
+vecteur gelé sert à la fois au **message** d'alerte (rappel du seuil) et au **classement des
+modules** (§9.6). Il reste valable jusqu'au réarmement / changement de vaisseau.
+
+### 9.6 Suggestion de modules & tri (verrouillé)
+
+- Un module de commande est **« aligné »** si son `ReferenceTransform.up` correspond au vecteur de
+  poussée **gelé** (à une tolérance près). **Plusieurs** possibles (une sonde pointe souvent dans le
+  même sens qu'une cabine).
+- Pendant un déclenchement, la liste se **réordonne** : clé de tri **primaire** `aligné` (les alignés
+  en tête, puce **✓ Aligné**), puis le tri habituel (priorité desc, nom, titre).
+- **Pas de boutons de suggestion dans le bandeau** (affichage encombré) : on s'appuie sur la vraie
+  liste. Le bandeau ne garde que **⤒ Réarmer sans changer**.
+
+### 9.7 Réarmement (verrouillé)
+
+Le disjoncteur se réarme (s'il est activé) sur :
+
+- **⤒ Réarmer sans changer** (bandeau) — repart sans toucher au point de contrôle (poussée
+  volontairement hors-axe) ;
+- **tout « Control From Here »** — notre bouton `⌖` **ou** l'entrée native du PAW : on capte
+  `GameEvents.onVesselReferenceTransformSwitch` (pas seulement le clic de notre bouton) ;
+- **changement de vaisseau** — `GameEvents.onVesselChange` (qui impose aussi de re-brancher
+  `OnFlyByWire` sur le nouveau vaisseau actif).
+
+### 9.8 Seuil (verrouillé)
+
+- Défaut **5°**, réglable **en direct** (pas dans un menu settings), sur la même ligne que le
+  disjoncteur. Persisté (réglage global).
+- **Masqué pendant un déclenchement** : le seuil déclencheur est déjà rappelé dans l'alerte ; on
+  réarme, puis on ajuste.
+- Marge nécessaire : le gimbal fait dévier la poussée instantanée de quelques degrés → un seuil trop
+  bas provoquerait des faux positifs.
+
+### 9.9 UI & intégration (verrouillé)
+
+- **Bandeau toujours visible** en tête de fenêtre, 3 états : Désactivé / Activé·Armé / Activé·Désarmé.
+- Au déclenchement : **la fenêtre s'affiche d'elle-même** si elle était masquée, et **l'icône de la
+  barre d'app clignote**.
+- L'icône clignotante est **repointée** sur l'état du disjoncteur — l'ancien `ToolbarWarningAnimator`
+  « contrôle hors module de commande » n'y est plus branché.
+- L'ancienne ligne « hors liste » (contrôle via port d'amarrage / rien, §2) **reste** comme
+  information, mais **découplée** du clignotement.
+
+### 9.10 API KSP de référence
+
+| Besoin | API |
+|---|---|
+| Override throttle par frame | `Vessel.OnFlyByWire` → `FlightCtrlState.mainThrottle` |
+| Couper le throttle persistant | `FlightInputHandler.state.mainThrottle = 0f` (comme la touche X) |
+| Poussée réelle | `ModuleEngines.finalThrust` × `-thrustTransform.forward` |
+| Sens de contrôle | `Vessel.ReferenceTransform.up` |
+| Réarmement | `GameEvents.onVesselReferenceTransformSwitch`, `GameEvents.onVesselChange` |
+| Orientation du control point | `ModuleCommand.SetControlPoint` → `Part.SetReferenceTransform` |
+
+---
+
+## 10. Fichiers jetables (à nettoyer)
 
 - [icon_check.png](icon_check.png) — aperçu de vérification de l'icône, supprimable.
 - [icon_preview.html](icon_preview.html) — galerie des propositions d'icônes, supprimable une fois

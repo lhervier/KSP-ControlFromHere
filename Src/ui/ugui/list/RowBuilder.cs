@@ -20,6 +20,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
         // No gear/crosshair glyph is guaranteed in the game SDF font; pick the first the font can render.
         private static string PawGlyph => DefaultPalette.PickGlyph("⚙", "☰", "≡", "P");          // ⚙ ☰ ≡
         private static string ControlGlyph => DefaultPalette.PickGlyph("⌖", "◎", "◉", "⊕", "C"); // ⌖ ◎ ◉ ⊕
+        private static string CheckGlyph => DefaultPalette.PickGlyph("✓", "√", "»");             // ✓ √
 
         // ===========================================
         // Builder parameters
@@ -134,6 +135,12 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             {
                 BuildPilotingBadge(line1.transform);
             }
+            // "✓ Aligné" chip on a suggested module while the breaker is tripped (never on the active one,
+            // which is misaligned by definition — that's why it tripped).
+            if (_info.IsAligned && !_info.IsActive)
+            {
+                BuildAlignedChip(line1.transform);
+            }
             // Flexible spacer: absorbs the leftover width so name + chips stay packed to the left.
             BuildFlexibleSpacer(line1.transform);
 
@@ -176,6 +183,21 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 Palette.ControlPointFontSize,
                 Palette.ControlPointPaddingH);
             Tooltips.Attach(chip, ModLocalization.GetString("tooltipControlPoint"));
+        }
+
+        private void BuildAlignedChip(Transform parent)
+        {
+            GameObject chip = RowElements.BuildChip(
+                parent,
+                "AlignedTag",
+                CheckGlyph + " " + ModLocalization.GetString("badgeAligned"),
+                Palette.AlignedTextColor,
+                Palette.AlignedBgColor,
+                Palette.AlignedBorderColor,
+                Palette.AlignedBorderThickness,
+                Palette.AlignedFontSize,
+                Palette.AlignedPaddingH);
+            Tooltips.Attach(chip, ModLocalization.GetString("tooltipAligned"));
         }
 
         private void BuildPilotingBadge(Transform parent)

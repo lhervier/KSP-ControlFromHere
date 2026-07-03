@@ -41,6 +41,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo Copying mod TMP sprite textures
+copy /y "GameData\ControlFromHereMod\Textures\*" "Release\ControlFromHereMod\Textures"
+if errorlevel 1 (
+    echo ERROR: Failed to copy the mod textures
+    exit /b 1
+)
+
 echo Copying localization files
 copy /y "GameData\ControlFromHereMod\Localization\*" "Release\ControlFromHereMod\Localization"
 if errorlevel 1 (

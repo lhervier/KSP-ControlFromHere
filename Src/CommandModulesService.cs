@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 using KSP.Localization;
 using com.github.lhervier.ksp.shared;
 
@@ -84,10 +85,14 @@ namespace com.github.lhervier.ksp.controlfromheremod
         }
 
         /// <summary>
-        /// The command modules of the given vessel, sorted by naming priority (desc), then vessel name,
-        /// then part title. Empty list when the vessel is null or has no command module.
+        /// The command modules of the given vessel. When <paramref name="frozenThrust"/> is provided (the
+        /// circuit breaker is tripped), each module is flagged aligned when — in its active orientation — its
+        /// control-forward is within <paramref name="alignTolerance"/> degrees of that thrust direction, and
+        /// aligned modules bubble to the top; otherwise the plain order applies: naming priority (desc),
+        /// then vessel name, then part title. Empty list when the vessel is null or has no command module.
         /// </summary>
-        public static List<CommandModuleInfo> GetCommandModules(Vessel vessel)
+        public static List<CommandModuleInfo> GetCommandModules(
+            Vessel vessel, Vector3? frozenThrust = null, float alignTolerance = 0f)
         {
             var result = new List<CommandModuleInfo>();
             if (vessel == null || vessel.parts == null)
@@ -118,6 +123,9 @@ namespace com.github.lhervier.ksp.controlfromheremod
                 VesselType vesselType = hasPlayerNaming ? naming.vesselType : vessel.vesselType;
                 int priority = hasPlayerNaming ? naming.namingPriority : 0;
 
+                bool isAligned = frozenThrust.HasValue
+                    && Vector3.Angle(GetControlForward(command), frozenThrust.Value) <= alignTolerance;
+
                 result.Add(new CommandModuleInfo(
                     part,
                     command,
@@ -126,12 +134,19 @@ namespace com.github.lhervier.ksp.controlfromheremod
                     priority,
                     vesselType,
                     part == referencePart,
-                    GetControlPointLabel(command)));
+                    GetControlPointLabel(command),
+                    isAligned));
             }
 
-            // Priority desc, then vessel name, then part title. Ties broken best-effort by these keys.
+            // While tripped, aligned modules first (they are the ones to take control from); then the plain
+            // order — priority desc, then vessel name, then part title. Ties broken best-effort by these keys.
             result.Sort((a, b) =>
             {
+                if (frozenThrust.HasValue)
+                {
+                    int byAligned = b.IsAligned.CompareTo(a.IsAligned);
+                    if (byAligned != 0) return byAligned;
+                }
                 int byPriority = b.NamingPriority.CompareTo(a.NamingPriority);
                 if (byPriority != 0) return byPriority;
                 int byName = string.Compare(a.VesselName, b.VesselName, System.StringComparison.CurrentCultureIgnoreCase);
@@ -140,6 +155,24 @@ namespace com.github.lhervier.ksp.controlfromheremod
             });
 
             return result;
+        }
+
+        /// <summary>
+        /// The control "forward" (navball up axis) the vessel would take if controlled from this module in
+        /// its active orientation — the active control point's transform up, or the part's own up when the
+        /// module has a single (default) control point.
+        /// </summary>
+        private static Vector3 GetControlForward(ModuleCommand command)
+        {
+            DictionaryValueList<string, ControlPoint> controlPoints = command.controlPoints;
+            ControlPoint active;
+            if (controlPoints != null
+                && controlPoints.TryGetValue(command.ActiveControlPointName, out active)
+                && active.transform != null)
+            {
+                return active.transform.up;
+            }
+            return command.part.transform.up;
         }
 
         /// <summary>

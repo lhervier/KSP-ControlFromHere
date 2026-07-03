@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-start;padding:40px 20px;min-height:100vh;gap:40px;flex-wrap:wrap}
-.kw{font-family:'Titillium Web',sans-serif;font-size:13px;background:#141414;border:1px solid #555;border-radius:3px;color:#ccc;width:340px;position:relative}
+.kw{font-family:'Titillium Web',sans-serif;font-size:13px;background:#141414;border:1px solid #555;border-radius:3px;color:#ccc;width:360px;position:relative}
 
 /* Title bar */
 .ktb{background:#2e2e2e;border-bottom:1px solid #444;padding:5px 8px;display:flex;align-items:center;gap:6px}
@@ -17,8 +17,54 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 .kbtn{background:#383838;border:1px solid #555;border-bottom:2px solid #333;color:#bbb;font-size:13px;width:20px;height:20px;border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Share Tech Mono',monospace}
 .kbtn:hover{background:#484848;color:#fff}
 
+/* ============================================================
+   Circuit breaker banner ("disjoncteur") — ALWAYS visible.
+   Two independent notions:
+     enabled ("Activé")  = the breaker is installed and watching. Global, persisted across scenes.
+     armed   ("Armé")    = the breaker is "up". Only meaningful when enabled. Thrust flows.
+   When enabled & armed, a thrust vector misaligned with the control direction beyond the
+   threshold DISARMS it (trips): main throttle drops to 0 and is LOCKED until the player rearms.
+   ============================================================ */
+.kbrk{border-bottom:1px solid #2a2a2a;font-family:'Titillium Web',sans-serif}
+.kbrk-main{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#1a1a1a;flex-wrap:wrap}
+.kbrk-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;font-weight:600;white-space:nowrap}
+.kbrk:not(.on) .kbrk-label{color:#5a5a5a}
+
+/* master enable switch */
+.kbrk-sw{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:600;padding:2px 9px;border-radius:11px;border:1px solid #444;background:#242424;color:#8a8a8a}
+.kbrk-sw .dot{width:8px;height:8px;border-radius:50%;background:#555;transition:background .1s}
+.kbrk.on .kbrk-sw{border-color:#4a6e20;background:rgba(141,190,69,.12);color:#8dbe45}
+.kbrk.on .kbrk-sw .dot{background:#8dbe45}
+.kbrk-sw:hover{filter:brightness(1.2)}
+
+/* arm-state pill (enabled only) */
+.kbrk-state{font-size:11px;display:inline-flex;align-items:center;gap:5px;font-weight:600;white-space:nowrap}
+.kbrk-state .dot{width:8px;height:8px;border-radius:50%}
+.kbrk.armed  .kbrk-state{color:#8dbe45}   .kbrk.armed  .kbrk-state .dot{background:#8dbe45}
+.kbrk.tripped .kbrk-state{color:#e0603a}  .kbrk.tripped .kbrk-state .dot{background:#e0603a;animation:blink 1s steps(1,end) infinite}
+.kbrk-idle{font-size:10px;color:#5a5a5a;font-style:italic}
+
+/* small inline action (Réarmer) */
+.kbrk-mini{background:#333;border:1px solid #555;color:#bbb;font-size:10px;padding:2px 8px;border-radius:2px;cursor:pointer;font-family:'Titillium Web',sans-serif;white-space:nowrap}
+.kbrk-mini:hover{background:#454545;color:#fff}
+.kbrk-mini.rearm{border-color:#4a6e20;color:#8dbe45}
+.kbrk-mini.rearm:hover{background:rgba(141,190,69,.15);color:#a9d96a}
+
+/* threshold, pushed to the right, on the same line */
+.kbrk-seuil{margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.kbrk-seuil b{color:#cbb06a;font-family:'Share Tech Mono',monospace;font-size:12px;min-width:26px;text-align:center}
+.kbrk-seuil .step{background:#2c2c2c;border:1px solid #4a4a4a;color:#aaa;width:16px;height:16px;line-height:0;border-radius:2px;cursor:pointer;font-family:'Share Tech Mono',monospace}
+.kbrk-seuil .step:hover{background:#3c3c3c;color:#fff}
+.kbrk-seuil.dim{opacity:.4}
+
+/* trip alert row (only when disarmed by a detected misalignment) */
+.kbrk-alert{padding:8px 10px;background:rgba(224,96,58,.09);border-top:1px solid #3a2018}
+.kbrk-alert-msg{font-size:11px;color:#ec8a6a;font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:7px;line-height:1.3}
+.kbrk-reco{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.kbrk-reco-lbl{font-size:10px;color:#9a8a80;letter-spacing:.02em}
+
 /* Sub-header line */
-.kcount{padding:4px 10px;background:#1a1a1a;border-bottom:1px solid #222;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#777}
+.kcount{padding:4px 10px;background:#151515;border-bottom:1px solid #222;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#777}
 .kcount strong{color:#aaa;font-weight:600}
 
 /* Command module rows */
@@ -33,6 +79,8 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 .kname{font-size:12px;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
 .kbadge{font-size:9px;color:#8dbe45;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid #4a6e20;padding:1px 5px;border-radius:2px;background:rgba(141,190,69,.1);flex-shrink:0}
 .kprio{font-size:9px;color:#7c93b0;font-weight:600;letter-spacing:.03em;border:1px solid #3a4a60;padding:1px 5px;border-radius:2px;background:rgba(124,147,176,.1);flex-shrink:0}
+.korient{font-size:9px;color:#b08fca;font-weight:600;letter-spacing:.03em;border:1px solid #4a3a5e;padding:1px 5px;border-radius:2px;background:rgba(176,143,202,.1);flex-shrink:0}
+.kreco-tag{font-size:9px;color:#a9d96a;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1px solid #4a6e20;padding:1px 5px;border-radius:2px;background:rgba(141,190,69,.12);flex-shrink:0}
 .kpart{font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 
 /* Per-row actions */
@@ -49,7 +97,7 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 
 /* External control point (docking port, or nothing — NOT a ModuleCommand of the list) */
 .krow.ext{background:rgba(200,150,60,.05);border-bottom:1px solid #2a2418}
-.krow.ext .kicon{color:#d0a24a;animation:blink 1.1s steps(1,end) infinite}
+.krow.ext .kicon{color:#d0a24a}
 @keyframes blink{50%{opacity:.2}}
 .krow.ext.none .kname{color:#8a8a8a;font-style:italic}
 .krow.ext.none .kicon{color:#7a7a7a}
@@ -60,20 +108,29 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
 .kempty{padding:16px 12px;color:#777;font-size:12px;line-height:1.55;text-align:center}
 .kempty .kempty-title{display:block;color:#aaa;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
 
-/* Demo switcher */
-.demo-switch{width:340px;font-family:'Titillium Web',sans-serif;font-size:11px;color:#888;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px}
+/* Demo switchers */
+.demo-switch{width:360px;font-family:'Titillium Web',sans-serif;font-size:11px;color:#888;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px}
+.demo-switch>span{min-width:96px}
 .demo-switch button{background:#242424;border:1px solid #444;color:#bbb;font-size:11px;padding:3px 8px;border-radius:2px;cursor:pointer;font-family:'Titillium Web',sans-serif}
 .demo-switch button:hover{background:#333;color:#fff}
 .demo-switch button.on{border-color:#4a6e20;color:#8dbe45;background:rgba(141,190,69,.1)}
 
-.note{width:340px;color:#666;font-size:11px;line-height:1.6;font-family:'Titillium Web',sans-serif}
-.note h3{color:#8dbe45;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.note{width:360px;color:#666;font-size:11px;line-height:1.6;font-family:'Titillium Web',sans-serif}
+.note h3{color:#8dbe45;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;margin-top:14px}
+.note h3:first-child{margin-top:0}
 .note code{font-family:'Share Tech Mono',monospace;color:#a98a4a}
+.note .red{color:#ec8a6a}.note .amber{color:#d0a24a}.note .green{color:#8dbe45}
 </style>
 </head>
 <body>
 
 <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+<div class="demo-switch">
+  <span>Disjoncteur&nbsp;:</span>
+  <button id="bk-off"     onclick="setBrk('off')">Désactivé</button>
+  <button id="bk-armed"   onclick="setBrk('armed')">Activé · Armé</button>
+  <button id="bk-tripped" onclick="setBrk('tripped')">Activé · Désarmé (déclenché)</button>
+</div>
 <div class="demo-switch">
   <span>Point de contrôle&nbsp;:</span>
   <button id="sw-dock" onclick="setExt('dock')">🔗 Port d'amarrage</button>
@@ -88,82 +145,143 @@ body{background:#0a0a0a;display:flex;justify-content:center;align-items:flex-sta
     <span class="kvessel">Station Mun-1</span>
     <button class="kbtn" title="Fermer">✕</button>
   </div>
+  <!-- Circuit-breaker banner: always present, at the very top so it stays visible in every case. -->
+  <div class="kbrk" id="brk"></div>
   <div class="kcount">Modules de commande : <strong>5</strong></div>
   <div class="klist" id="list"></div>
 </div>
 </div>
 
 <div class="note">
-  <h3>Notes de maquette</h3>
-  Chaque ligne = un module de commande (cockpit, capsule, sonde, siège…) du vaisseau courant.<br><br>
-  • <strong style="color:#aaa">Gros texte</strong> = nom du vaisseau porté par le module (<code>part.vesselNaming.vesselName</code>) — distinct quand des vaisseaux sont dockés.<br>
-  • <strong style="color:#aaa">Sous-ligne</strong> = titre localisé de la pièce (<code>partInfo.title</code>).<br>
-  • Le tag <span style="color:#7c93b0">P50</span> = priorité de nommage (<code>namingPriority</code>) ; la plus haute donne son nom au vaisseau global.<br>
-  • Le badge <span style="color:#8dbe45">PILOTAGE</span> marque le module aux commandes (ligne surlignée).<br>
-  • <code>⚙</code> ouvre le PAW. <code>⌖</code> « Contrôler d'ici » : raccourci de « Control From Here ». Désactivé uniquement sur le module déjà aux commandes.
-  <br><br>
-  <h3>Point de contrôle hors liste</h3>
-  Le vaisseau peut être piloté par un élément qui n'est <em>pas</em> un module de commande de la liste : un <strong style="color:#d0a24a">port d'amarrage</strong> (« Control From Here » exposé par <code>ModuleDockingNode</code>), ou <strong style="color:#d0a24a">rien du tout</strong> (contrôle perdu / pièce sans commande).<br><br>
-  • On l'épingle en <strong>haut de la liste</strong>, sur fond ambre avec le tag pointillé <span style="color:#d0a24a">Hors liste</span> et l'icône qui <strong>clignote</strong> — comme l'icône de l'appli quand le contrôle est hors liste.<br>
-  • Il garde le badge <span style="color:#8dbe45">Pilotage</span> (c'est bien lui aux commandes) mais n'offre <strong>pas</strong> de <code>⌖</code> : ce n'est pas un module de commande.<br>
-  • <span style="color:#d0a24a">Port d'amarrage</span> → le bouton <code>⚙</code> reste dispo et utile (le PAW existe). <span style="color:#8a8a8a">Via rien</span> → pas de pièce, donc <code>⚙</code> désactivé.<br>
-  • Un séparateur rappelle que les lignes suivantes sont les modules vers lesquels on <em>peut</em> basculer.<br><br>
-  <em style="color:#555">Utilisez les boutons « Point de contrôle » en haut pour prévisualiser chaque cas.</em>
+  <h3>Disjoncteur de poussée</h3>
+  Bandeau <strong>toujours visible</strong> en tête de fenêtre. Il coupe et <strong>verrouille</strong> la poussée si l'on accélère alors que le vecteur de poussée réel n'est pas aligné avec le <em>sens de contrôle</em> du vaisseau (<code>ReferenceTransform.up</code>) — le cas typique après un désamarrage.<br><br>
+  Deux notions distinctes&nbsp;:<br>
+  • <strong>Activé</strong> = le disjoncteur est en place et surveille. Réglage <strong>global</strong>, <strong>persisté entre les scènes</strong>. Un changement de vaisseau quelconque le <strong>réarme</strong> automatiquement (s'il est activé).<br>
+  • <strong>Armé</strong> = le disjoncteur est « en haut ». N'a de sens que si activé. Poussée autorisée.<br><br>
+  États du bandeau&nbsp;:<br>
+  • <strong>Désactivé</strong> — surveillance inactive, aucune coupure. (Pour ne plus être gêné, on désactive&nbsp;: inutile de pouvoir verrouiller sa propre poussée à la main.)<br>
+  • Activé · <span class="green">Armé</span> — état nominal, poussée autorisée.<br>
+  • Activé · <span class="red">Désarmé</span> — <strong>déclenché uniquement</strong> par un désalignement détecté&nbsp;: moteurs coupés &amp; verrouillés, <strong>l'icône de la barre d'app clignote</strong>, et <strong>la fenêtre s'affiche d'elle-même</strong> si elle était masquée.<br><br>
+  <h3>Reprendre le contrôle</h3>
+  Au déclenchement, la <strong>liste ci-dessous se réordonne</strong>&nbsp;: les modules dont le « avant » est aligné avec la poussée (puce <span class="green">✓ Aligné</span>) remontent en tête. <strong>Il peut y en avoir plusieurs</strong> : une sonde pointe souvent dans le même sens qu'une cabine. Cliquer <code>⌖</code> sur l'un d'eux bascule le contrôle (<code>MakeReference()</code>) <em>et</em> réarme.<br>
+  Plus largement, <strong>tout « Control From Here » réarme</strong> le disjoncteur (s'il est activé) — y compris l'entrée native du PAW&nbsp;: on capte l'événement KSP <code>onVesselReferenceTransformSwitch</code>, pas seulement le clic de notre bouton.<br>
+  Le bandeau ne garde que <span class="green">⤒ Réarmer sans changer</span>, pour repartir sans toucher au point de contrôle (poussée volontairement hors-axe).<br><br>
+  <h3>Seuil</h3>
+  Sur la même ligne que le disjoncteur, réglable en direct (défaut <code>5°</code>). <strong>Masqué pendant un déclenchement</strong> — le seuil déclencheur est déjà rappelé dans l'alerte&nbsp;; on réarme, puis on ajuste. Le gimbal fait dévier la poussée instantanée de quelques degrés&nbsp;: un seuil trop bas provoquerait des faux positifs.<br><br>
+  <h3>Liste des modules de commande</h3>
+  Chaque ligne = un module de commande (<code>part.FindModuleImplementing&lt;ModuleCommand&gt;() != null</code>). <span class="green">PILOTAGE</span> marque le module aux commandes ; <code>⚙</code> ouvre le PAW ; <code>⌖</code> « Contrôler d'ici ». Un point de contrôle <span class="amber">hors liste</span> (port d'amarrage, ou rien) reste épinglé en haut.<br><br>
+  <em style="color:#555">Utilisez les deux rangées de boutons ci-dessus pour prévisualiser chaque état.</em>
 </div>
 
 <script>
 // Each module of command on the current (docked) vessel.
-// Inclusion filter = part.FindModuleImplementing<ModuleCommand>() != null.
-// This naturally excludes docking ports (they expose "Control From Here" via
-// ModuleDockingNode, not ModuleCommand) while keeping command parts that have
-// no custom naming.
-// `name`       = vessel name carried by the part (part.vesselNaming?.vesselName ?? vessel.vesselName).
-// `part`       = localized part title (partInfo.title).
-// `icon`       = MOCKUP PLACEHOLDER only. Real UI uses the stock vessel-type sprite via the
-//                shared module: VesselTypeIcons.Get(part.vesselNaming?.vesselType ?? vessel.vesselType).
-// `prio`       = naming priority (vesselNaming.namingPriority); highest names the global vessel.
-// `active`     = the part currently controlling the vessel (ReferenceTransform).
-//                "Control From Here" stays always available in the PAW, so the only
-//                disabled state of the ⌖ button is "this module is already in control".
-// Sort: priority desc, then vessel name, then part title.
+// `aligned` (MOCKUP ONLY) fakes "this module's control-forward matches the thrust vector that tripped
+// the breaker", i.e. a valid module to take control from. In the live mod the throttle is already cut
+// to 0 once tripped (no live thrust left to read): the offending thrust direction is SNAPSHOTTED at
+// trip time, and each ModuleCommand's ReferenceTransform.up is compared against that frozen vector.
+// `orient` — the control-point orientation chosen for this ModuleCommand in its PAW (localized value only:
+// "Par défaut", "Par-dessus", "Inversé"...). null when the part has a single control point: like the PAW,
+// no orientation choice is offered, so no chip is shown.
 const MODULES = [
-  {name: "Station Mun-1", part: "Module Cupola",              icon: "🛰", prio: 50, active: false},
-  {name: "Station Mun-1", part: "Cœur de sonde Probodobodyne OKTO2", icon: "📡", prio: 0, active: false},
-  {name: "Navette Eve",   part: "Capsule de commandement Mk1-3", icon: "🚀", prio: 30, active: false},
-  {name: "Remorqueur 7",  part: "Cœur de sonde RC-001S",      icon: "📶", prio: 10, active: false},
-  {name: "Station Mun-1", part: "Siège externe de commande",  icon: "💺", prio: 0},
+  {name: "Station Mun-1", part: "Module Cupola",                     icon: "🛰", prio: 50, active: false, aligned: true,  orient: "Par-dessus"},
+  {name: "Station Mun-1", part: "Cœur de sonde Probodobodyne OKTO2", icon: "📡", prio: 0,  active: false, aligned: true,  orient: "Par défaut"},
+  {name: "Navette Eve",   part: "Capsule de commandement Mk1-3",     icon: "🚀", prio: 30, active: true,  aligned: false, orient: null},
+  {name: "Remorqueur 7",  part: "Cœur de sonde RC-001S",             icon: "📶", prio: 10, active: false, aligned: false, orient: "Inversé"},
+  {name: "Station Mun-1", part: "Siège externe de commande",         icon: "💺", prio: 0,  active: false, aligned: false, orient: null},
 ];
 
-// The vessel's actual control point (ReferenceTransform) may NOT be a ModuleCommand
-// listed above. It can be:
-//   'dock' — a docking port (controlled via ModuleDockingNode's own "Control From Here").
-//            It's a real part, so its PAW is still reachable and useful.
-//   'none' — no usable control point (e.g. a part with no ModuleControlSurface control,
-//            or control was lost). No part → no PAW.
-// In the live UI the app icon blinks while control is off-list; the pinned row's icon
-// mirrors that with the same blink.
-// When one of the listed modules is in control instead, EXTERNAL is inactive.
+// The vessel's actual control point may be a part that is NOT a listed ModuleCommand:
+//   'dock' — a docking port (control via ModuleDockingNode). Real part → PAW reachable.
+//   'none' — no usable control point. No part → no PAW.
 const EXTERNAL = {
-  active: true,          // is an off-list part currently in control?
+  active: false,         // is an off-list part currently in control?
   kind: "dock",          // 'dock' | 'none'
-  name: "Station Mun-1", // vessel name carried by the control point (dock only)
-  part: "Port d'amarrage Clamp-O-Tron", // localized part title (dock only)
-  icon: "🔗",            // MOCKUP PLACEHOLDER — real UI uses the stock vessel-type sprite
+  name: "Station Mun-1",
+  part: "Port d'amarrage Clamp-O-Tron",
+  icon: "🔗",
 };
 
-// Priority desc, then vessel name, then part title (ties broken "au mieux").
+// Circuit-breaker state.
+//   enabled — "Activé": installed & watching. Global, persisted across scenes.
+//   armed   — "Armé": breaker up. Only meaningful when enabled. Disarming only ever happens
+//             automatically, on a detected misalignment — there is no manual disarm (to stop the
+//             breaker, the player just disables it).
+//   threshold — misalignment angle, in degrees.
+const BREAKER = {enabled: true, armed: false, threshold: 5};
+
+// Sort: while the breaker is tripped, aligned modules bubble to the top (they are the ones to take
+// control from); otherwise the normal order — priority desc, then vessel name, then part title.
 function sorted() {
+  const alignedFirst = BREAKER.enabled && !BREAKER.armed;
   return MODULES
     .map((m, i) => ({m, i}))
-    .sort((a, b) => b.m.prio - a.m.prio
+    .sort((a, b) => (alignedFirst ? (b.m.aligned ? 1 : 0) - (a.m.aligned ? 1 : 0) : 0)
+                 || b.m.prio - a.m.prio
                  || a.m.name.localeCompare(b.m.name)
                  || a.m.part.localeCompare(b.m.part));
 }
 
-// Pinned row for the off-list control point, shown at the very top of the list
-// and visually set apart (amber accent, dashed "Hors liste" tag, blinking icon).
-// It carries the green "Pilotage" badge like any active row — it IS what controls
-// the vessel — but it is not a module of command, so it offers no "Contrôler d'ici".
+// ---- Breaker banner --------------------------------------------------------
+function brkClass() {
+  if (!BREAKER.enabled) return 'kbrk';
+  return 'kbrk on ' + (BREAKER.armed ? 'armed' : 'tripped');
+}
+
+function brkAlert() {
+  return `
+    <div class="kbrk-alert">
+      <div class="kbrk-alert-msg">⚡ Poussée désalignée &gt; ${BREAKER.threshold}° — moteurs coupés &amp; verrouillés</div>
+      <div class="kbrk-reco">
+        <span class="kbrk-reco-lbl">Reprenez le contrôle depuis un module <b style="color:#8dbe45;font-weight:600">✓ Aligné</b> ci-dessous, ou</span>
+        <button class="kbrk-mini rearm" onclick="brkArm()">⤒ Réarmer sans changer</button>
+      </div>
+    </div>`;
+}
+
+function brkRender() {
+  const el = document.getElementById('brk');
+  el.className = brkClass();
+
+  ['off','armed','tripped'].forEach(k => document.getElementById('bk-'+k).classList.remove('on'));
+  document.getElementById('bk-' + (!BREAKER.enabled ? 'off' : BREAKER.armed ? 'armed' : 'tripped')).classList.add('on');
+
+  let state;
+  if (!BREAKER.enabled) {
+    state = `<span class="kbrk-idle">surveillance inactive</span>`;
+  } else if (BREAKER.armed) {
+    state = `<span class="kbrk-state"><span class="dot"></span>Armé</span>`;
+  } else {
+    state = `<span class="kbrk-state"><span class="dot"></span>Désarmé — poussée verrouillée</span>`;
+  }
+
+  // Threshold stepper is hidden while tripped: the triggering angle is already recalled in the alert,
+  // and you rearm first, then adjust. Shown (dimmed) when disabled, live when armed.
+  const seuil = (BREAKER.enabled && !BREAKER.armed) ? '' : `
+      <span class="kbrk-seuil${BREAKER.enabled ? '' : ' dim'}" title="Seuil de désalignement">Seuil
+        <button class="step" onclick="brkSeuil(-1)">−</button><b>${BREAKER.threshold}°</b><button class="step" onclick="brkSeuil(1)">+</button>
+      </span>`;
+
+  el.innerHTML = `
+    <div class="kbrk-main">
+      <span class="kbrk-label">⚡ Disjoncteur</span>
+      <button class="kbrk-sw" onclick="brkToggle()" title="Activer / désactiver (réglage global, persisté)">
+        <span class="dot"></span>${BREAKER.enabled ? 'Activé' : 'Désactivé'}
+      </button>
+      ${state}
+      ${seuil}
+    </div>
+    ${BREAKER.enabled && !BREAKER.armed ? brkAlert() : ''}`;
+}
+
+function brkToggle() {
+  BREAKER.enabled = !BREAKER.enabled;
+  if (BREAKER.enabled) BREAKER.armed = true; // enabling arms it
+  render();
+}
+function brkArm() { BREAKER.armed = true; render(); } // rearm
+function brkSeuil(d) { BREAKER.threshold = Math.max(1, Math.min(45, BREAKER.threshold + d)); brkRender(); }
+
+// ---- List ------------------------------------------------------------------
 function extRow() {
   if (!EXTERNAL.active) return '';
   if (EXTERNAL.kind === 'none') {
@@ -195,9 +313,14 @@ function extRow() {
 }
 
 function render() {
+  brkRender();
+
   document.getElementById('sw-dock').classList.toggle('on', EXTERNAL.active && EXTERNAL.kind === 'dock');
   document.getElementById('sw-none').classList.toggle('on', EXTERNAL.active && EXTERNAL.kind === 'none');
   document.getElementById('sw-mod').classList.toggle('on', !EXTERNAL.active);
+
+  // A module is highlighted as a suggestion in the list only while the breaker is tripped.
+  const showReco = BREAKER.enabled && !BREAKER.armed;
 
   const c = document.getElementById('list');
   if (!MODULES.length) {
@@ -208,7 +331,7 @@ function render() {
     <div class="krow ${m.active ? 'active' : ''}">
       <span class="kicon">${m.icon}</span>
       <div class="kinfo">
-        <div class="kname">${m.name} ${m.prio > 0 ? `<span class="kprio" title="Priorité de nommage">P${m.prio}</span>` : ''} ${m.active ? '<span class="kbadge">Pilotage</span>' : ''}</div>
+        <div class="kname">${m.name} ${m.prio > 0 ? `<span class="kprio" title="Priorité de nommage">P${m.prio}</span>` : ''} ${m.orient ? `<span class="korient" title="Orientation du point de contrôle (choisie dans le PAW)">⭯ ${m.orient}</span>` : ''} ${m.active ? '<span class="kbadge">Pilotage</span>' : ''} ${showReco && m.aligned && !m.active ? '<span class="kreco-tag" title="Aligné avec la poussée">✓ Aligné</span>' : ''}</div>
         <div class="kpart">${m.part}</div>
       </div>
       <div class="kactions">
@@ -221,10 +344,19 @@ function render() {
 function paw(i) { alert("PAW → " + MODULES[i].name); }
 function pawExt() { alert("PAW → " + EXTERNAL.part); }
 
-// Taking control from a listed module deactivates the off-list control point.
+// Taking control from a listed module deactivates the off-list control point (and clears a trip).
 function control(i) {
   EXTERNAL.active = false;
   MODULES.forEach((m, j) => m.active = (j === i));
+  BREAKER.armed = true;
+  render();
+}
+
+// Demo switcher: breaker state.
+function setBrk(kind) {
+  if (kind === 'off')     { BREAKER.enabled = false; }
+  if (kind === 'armed')   { BREAKER.enabled = true; BREAKER.armed = true; }
+  if (kind === 'tripped') { BREAKER.enabled = true; BREAKER.armed = false; }
   render();
 }
 
@@ -232,7 +364,7 @@ function control(i) {
 function setExt(kind) {
   if (kind === 'module') {
     EXTERNAL.active = false;
-    MODULES.forEach((m, j) => m.active = (j === 0));
+    MODULES.forEach((m, j) => m.active = (j === 2));
   } else {
     EXTERNAL.active = true;
     EXTERNAL.kind = kind;

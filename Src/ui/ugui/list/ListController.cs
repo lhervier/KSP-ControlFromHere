@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using com.github.lhervier.ksp.controlfromheremod.breaker;
 using com.github.lhervier.ksp.controlfromheremod.ui.styles;
 using com.github.lhervier.ksp.shared;
 using com.github.lhervier.ksp.shared.ugui;
@@ -10,8 +11,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 {
     /// <summary>
     /// Builds and refreshes the command-module rows from the active vessel. Rebuilds on vessel change,
-    /// vessel modification (docking/undocking, part add/remove) and control-point switch. Skips rebuilds
-    /// while the window is hidden and catches up on re-open (OnEnable).
+    /// vessel modification (docking/undocking, part add/remove), control-point switch, and circuit-breaker
+    /// state change (so aligned modules bubble up while tripped). Skips rebuilds while the window is hidden
+    /// and catches up on re-open (OnEnable).
     /// </summary>
     public class ListController : MonoBehaviour
     {
@@ -20,11 +22,15 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
         // Guards against stacking rebuild coroutines when several events fire in the same frame.
         private bool _rebuildQueued;
 
+        // Whether we are subscribed to the breaker (its instance may not exist yet at our Start).
+        private bool _breakerSubscribed;
+
         public void Start()
         {
             GameEvents.onVesselChange.Add(OnVesselChange);
             GameEvents.onVesselWasModified.Add(OnVesselWasModified);
             GameEvents.onVesselReferenceTransformSwitch.Add(OnReferenceTransformSwitch);
+            SubscribeBreaker();
             Rebuild();
         }
 
@@ -33,13 +39,31 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             GameEvents.onVesselChange.Remove(OnVesselChange);
             GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
             GameEvents.onVesselReferenceTransformSwitch.Remove(OnReferenceTransformSwitch);
+            if (_breakerSubscribed && ThrustBreaker.Instance != null)
+            {
+                ThrustBreaker.Instance.OnStateChanged.Remove(OnBreakerStateChanged);
+            }
+            _breakerSubscribed = false;
         }
 
         // Catch up on the state that may have changed while the window was hidden.
         public void OnEnable()
         {
+            SubscribeBreaker();
             Rebuild();
         }
+
+        private void SubscribeBreaker()
+        {
+            if (_breakerSubscribed || ThrustBreaker.Instance == null)
+            {
+                return;
+            }
+            ThrustBreaker.Instance.OnStateChanged.Add(OnBreakerStateChanged);
+            _breakerSubscribed = true;
+        }
+
+        private void OnBreakerStateChanged() => QueueRebuild();
 
         // ============================================
         // Methods bound to events
@@ -99,7 +123,12 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 offRow.transform.SetParent(transform, false);
             }
 
-            List<CommandModuleInfo> modules = CommandModulesService.GetCommandModules(vessel);
+            // While the breaker is tripped, rank modules by alignment with the frozen thrust direction.
+            ThrustBreaker breaker = ThrustBreaker.Instance;
+            Vector3? frozenThrust = breaker != null ? breaker.TripThrustDirection : null;
+            float tolerance = breaker != null ? breaker.Threshold : 0f;
+
+            List<CommandModuleInfo> modules = CommandModulesService.GetCommandModules(vessel, frozenThrust, tolerance);
             if (modules.Count == 0)
             {
                 BuildEmptyState(ModLocalization.GetString("labelNoCommandModules"));

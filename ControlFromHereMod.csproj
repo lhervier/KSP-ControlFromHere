@@ -79,9 +79,11 @@
 
   <ItemGroup>
     <Compile Include="Src/*.cs" />
+    <Compile Include="Src/breaker/*.cs" />
     <Compile Include="Src/ui/*.cs" />
     <Compile Include="Src/ui/styles/*.cs" />
     <Compile Include="Src/ui/ugui/*.cs" />
+    <Compile Include="Src/ui/ugui/breaker/*.cs" />
     <Compile Include="Src/ui/ugui/list/*.cs" />
     <!-- Shared classes (KSP-Shared submodule) compiled into the same dll -->
     <Compile Include="KSP-Shared/Src/**/*.cs" />
