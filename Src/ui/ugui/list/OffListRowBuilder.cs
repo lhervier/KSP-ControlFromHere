@@ -102,7 +102,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             var nameGo = new GameObject("Name", typeof(RectTransform));
             nameGo.transform.SetParent(line1.transform, false);
             var nameLe = nameGo.AddComponent<LayoutElement>();
-            nameLe.flexibleWidth = 1f;
+            // Not greedy: the name shrinks (ellipsis) only when name + chips no longer fit; the trailing
+            // flexible spacer eats the remaining width, keeping the chips glued to the name on the left.
+            nameLe.flexibleWidth = 0f;
             var name = UGUILabels.AddLabel(nameGo);
             name.text = uncontrolled ? ModLocalization.GetString("labelUncontrolledName") : _info.VesselName;
             name.fontSize = Palette.NameFontSize;
@@ -116,6 +118,8 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             {
                 BuildPilotingBadge(line1.transform);
             }
+            // Flexible spacer: absorbs the leftover width so name + chips stay packed to the left.
+            BuildFlexibleSpacer(line1.transform);
 
             // Line 2: part title, or the "uncontrolled" explanation.
             var titleGo = new GameObject("PartTitle", typeof(RectTransform));
@@ -191,6 +195,15 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             Tooltips.Attach(
                 paw.gameObject,
                 ModLocalization.GetString(hasPaw ? "tooltipPaw" : "tooltipNoPaw"));
+        }
+
+        private static void BuildFlexibleSpacer(Transform parent)
+        {
+            var go = new GameObject("Spacer", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var le = go.AddComponent<LayoutElement>();
+            le.flexibleWidth = 1f;
+            le.minWidth = 0f;
         }
 
         private static GameObject NewHLine(Transform parent, string objectName)
