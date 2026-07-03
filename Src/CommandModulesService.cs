@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KSP.Localization;
 using com.github.lhervier.ksp.shared;
 
 namespace com.github.lhervier.ksp.controlfromheremod
@@ -124,7 +125,8 @@ namespace com.github.lhervier.ksp.controlfromheremod
                     part.partInfo != null ? part.partInfo.title : part.name,
                     priority,
                     vesselType,
-                    part == referencePart));
+                    part == referencePart,
+                    GetControlPointLabel(command)));
             }
 
             // Priority desc, then vessel name, then part title. Ties broken best-effort by these keys.
@@ -138,6 +140,30 @@ namespace com.github.lhervier.ksp.controlfromheremod
             });
 
             return result;
+        }
+
+        /// <summary>
+        /// The localized name of the module's active control-point orientation (e.g. "Reversed"), using the
+        /// stock wording, or null when the part has a single control point (the PAW hides its "Control Point"
+        /// entry in that case, so we do too).
+        /// </summary>
+        private static string GetControlPointLabel(ModuleCommand command)
+        {
+            // KSP only offers an orientation choice — and shows the PAW entry — when there is more than one
+            // control point (ModuleCommand.UpdateControlPointEvent gates on controlPoints.Count > 1).
+            DictionaryValueList<string, ControlPoint> controlPoints = command.controlPoints;
+            if (controlPoints == null || controlPoints.Count <= 1)
+            {
+                return null;
+            }
+            ControlPoint active;
+            if (!controlPoints.TryGetValue(command.ActiveControlPointName, out active))
+            {
+                return null;
+            }
+
+            // ControlPoint.displayName is itself a localization tag (e.g. "#autoLOC_6011004" = "Reversed").
+            return Localizer.Format(active.displayName);
         }
 
         /// <summary>

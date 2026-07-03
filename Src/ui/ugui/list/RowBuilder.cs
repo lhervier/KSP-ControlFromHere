@@ -113,6 +113,11 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             {
                 BuildPriorityTag(line1.transform);
             }
+            // Orientation chip, only for parts exposing more than one control point (null otherwise).
+            if (!string.IsNullOrEmpty(_info.ControlPointLabel))
+            {
+                BuildControlPointTag(line1.transform);
+            }
             if (_info.IsActive)
             {
                 BuildPilotingBadge(line1.transform);
@@ -142,6 +147,21 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 Palette.PrioFontSize,
                 Palette.PrioPaddingH);
             Tooltips.Attach(chip, ModLocalization.GetString("tooltipPriority"));
+        }
+
+        private void BuildControlPointTag(Transform parent)
+        {
+            GameObject chip = RowElements.BuildChip(
+                parent,
+                "ControlPointTag",
+                _info.ControlPointLabel,
+                Palette.ControlPointColor,
+                Palette.ControlPointBgColor,
+                Palette.ControlPointBorderColor,
+                Palette.ControlPointBorderThickness,
+                Palette.ControlPointFontSize,
+                Palette.ControlPointPaddingH);
+            Tooltips.Attach(chip, ModLocalization.GetString("tooltipControlPoint"));
         }
 
         private void BuildPilotingBadge(Transform parent)

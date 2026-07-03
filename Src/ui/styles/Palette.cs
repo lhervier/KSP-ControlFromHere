@@ -54,6 +54,14 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         public const int PartTitleFontSize = 10;
         public static readonly Color PartTitleColor = Rgb(102, 102, 102);      // #666
 
+        // Control-point orientation chip (e.g. "Reversed"), shown only on parts with several control points
+        public const int ControlPointFontSize = 9;
+        public const float ControlPointPaddingH = 5f;
+        public const int ControlPointBorderThickness = 1;
+        public static readonly Color ControlPointColor = Rgb(176, 143, 202);   // #b08fca
+        public static readonly Color ControlPointBorderColor = Rgb(74, 58, 94); // #4a3a5e
+        public static readonly Color ControlPointBgColor = Rgba(176, 143, 202, 0.10f);
+
         // Priority tag "P50"
         public const int PrioFontSize = 9;
         public const float PrioPaddingH = 5f;

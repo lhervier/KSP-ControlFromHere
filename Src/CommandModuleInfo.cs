@@ -30,6 +30,10 @@ namespace com.github.lhervier.ksp.controlfromheremod
         /// <summary>True when this part is the vessel's current control point (reference transform).</summary>
         public bool IsActive { get; }
 
+        /// <summary>Localized name of the active control-point orientation (e.g. "Reversed"), or null when the
+        /// part offers a single control point — matching the PAW, which hides its "Control Point" entry then.</summary>
+        public string ControlPointLabel { get; }
+
         public CommandModuleInfo(
             Part part,
             ModuleCommand command,
@@ -37,7 +41,8 @@ namespace com.github.lhervier.ksp.controlfromheremod
             string partTitle,
             int namingPriority,
             VesselType vesselType,
-            bool isActive)
+            bool isActive,
+            string controlPointLabel)
         {
             this.Part = part;
             this.Command = command;
@@ -46,6 +51,7 @@ namespace com.github.lhervier.ksp.controlfromheremod
             this.NamingPriority = namingPriority;
             this.VesselType = vesselType;
             this.IsActive = isActive;
+            this.ControlPointLabel = controlPointLabel;
         }
     }
 }
