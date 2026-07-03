@@ -71,7 +71,12 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             BuildInfoColumn(rowGo.transform);
             BuildActions(rowGo.transform);
 
-            return rowGo.AddComponent<RowController>();
+            // Hover feedback (PointerHandler, not EventTrigger, so the mouse wheel keeps scrolling the
+            // list). The controlling module keeps its green tint on hover; a plain row gets the wash.
+            var pointer = rowGo.AddComponent<PointerHandler>();
+            Color hoverColor = _info.IsActive ? Palette.RowActiveBgColor : Palette.RowHoverColor;
+            return rowGo.AddComponent<RowController>()
+                .WithHover(bg, bg.color, hoverColor, pointer);
         }
 
         // ===========================================

@@ -37,6 +37,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         public const float RowPaddingV = 6f;
         public const float RowSpacing = 8f;
         public static readonly Color RowActiveBgColor = Rgba(141, 190, 69, 0.06f);
+        // Faint white wash on hover for a plain (non-controlling) module row. The controlling module
+        // keeps its green tint on hover; the off-list row keeps its amber tint — as in the mockup.
+        public static readonly Color RowHoverColor = Rgba(255, 255, 255, 0.03f);
         public const float RowAccentBarThickness = 2f;
 
         // Vessel-type icon box
