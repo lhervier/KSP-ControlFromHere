@@ -1,6 +1,6 @@
 # KSP-ControlFromHere
 
-A Kerbal Space Program mod that adds a flight-scene window listing the **command modules** of the active vessel, with one-click access to each module's part action window and to its "Control From Here" action.
+A Kerbal Space Program mod that adds a flight-scene window listing the **command modules** of the active vessel, with one-click access to each module's part action window and to its "Control From Here" action. It also embeds a **thrust circuit breaker** that catches the classic "thrusting the wrong way" mistake (typically after an undock) and helps you take control from the right module.
 
 ## Features
 
@@ -9,7 +9,8 @@ A Kerbal Space Program mod that adds a flight-scene window listing the **command
   - the vessel-type icon (native KSP sprite),
   - the vessel name carried by the module,
   - the part title (already localized by KSP),
-  - the naming priority (shown only when greater than 0).
+  - the naming priority (shown only when greater than 0),
+  - the active control-point orientation, when the part offers more than one.
 - A **Piloting** badge marks the module that currently controls the vessel.
 - Two actions per row:
   - **Show the part action window** of the part.
@@ -17,6 +18,16 @@ A Kerbal Space Program mod that adds a flight-scene window listing the **command
 - The list refreshes automatically on vessel change, vessel modification (docking/undocking, part add/remove) and control-point switch.
 
 The window is reachable from an application-launcher button (white joystick icon).
+
+### Thrust circuit breaker
+
+An always-visible banner at the top of the window watches the thrust while you fly. If you throttle up while the **real thrust** points away from the vessel's **control direction** (`ReferenceTransform.up`) by more than a threshold, the breaker **trips**: it cuts and **locks** the throttle to 0, opens the window if it was hidden, and blinks the toolbar icon — so you notice immediately instead of burning off-axis.
+
+- **Enabled / threshold** are a **global setting, persisted** across scenes and sessions. The threshold (default **5°**) is adjustable live from the banner; a small margin is needed because engine gimbal deflects the instantaneous thrust by a few degrees.
+- Detection is **reactive**: it reads the thrust actually applied each frame (`ModuleEngines.finalThrust`), so an engine that does not push (unstaged, out of fuel, atmospheric cutoff…) simply does not count — no thrust prediction.
+- While tripped, the list **reorders**: command modules whose control-forward matches the offending thrust get an **Aligned** chip and bubble to the top, so the module to take control from is obvious.
+- The breaker **rearms** on any "Control From Here" (the mod's button *or* the stock PAW entry), on a vessel change, or via the banner's **Rearm without switching** action (for a deliberately off-axis burn).
+- Disarming only ever results from a detected misalignment — there is no manual disarm. To stop being interrupted, just disable the breaker.
 
 See [mockup.html](mockup.html) for the reference layout and [SPEC.md](SPEC.md) for the full specification and the design decisions behind the mod.
 
@@ -50,7 +61,7 @@ Part titles are not translated by the mod: they come already localized from KSP 
 ## Repository layout
 
 - `Src/` — mod sources (`com.github.lhervier.ksp.*`).
-- `GameData/ControlFromHereMod/` — icon and localization files shipped with the mod.
+- `GameData/ControlFromHereMod/` — icon, sprite textures (e.g. the breaker's bolt glyph) and localization files shipped with the mod.
 - `KSP-Shared/` — git **submodule** ([KSP-Shared](https://github.com/lhervier/KSP-Shared.git)) providing the shared uGUI components, styles and sprite helpers. It is compiled directly from sources into the mod, producing a **single DLL**.
 
 ## Building
