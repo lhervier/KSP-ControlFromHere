@@ -112,11 +112,14 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
                 BuildSeparator(ModLocalization.GetString("labelAvailableModules"));
             }
 
+            RowController lastRow = null;
             foreach (CommandModuleInfo info in modules)
             {
-                RowController row = new RowBuilder().WithInfo(info).Build();
-                row.transform.SetParent(transform, false);
+                lastRow = new RowBuilder().WithInfo(info).Build();
+                lastRow.transform.SetParent(transform, false);
             }
+            // No trailing separator under the last row of the list (mirrors the mockup's :last-child rule).
+            lastRow.HideSeparator();
             LOGGER.LogDebug("Rebuilt list: " + modules.Count + " command module(s) for " + vessel.vesselName
                 + (offList != null ? " (off-list control: " + offList.Status + ")" : ""));
         }

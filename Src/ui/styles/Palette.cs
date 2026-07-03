@@ -41,6 +41,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         // keeps its green tint on hover; the off-list row keeps its amber tint — as in the mockup.
         public static readonly Color RowHoverColor = Rgba(255, 255, 255, 0.03f);
         public const float RowAccentBarThickness = 2f;
+        // Discreet line separating each row, barely lighter than the window background (#1c1c1c).
+        public const float RowSeparatorThickness = 1f;
+        public static readonly Color RowSeparatorColor = Rgb(28, 28, 28);      // #1c1c1c
 
         // Vessel-type icon box
         public const float TypeIconSize = 20f;
@@ -93,6 +96,8 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.styles
         public static readonly Color OffListTagBgColor = Rgba(200, 150, 60, 0.10f);
         public static readonly Color OffListTagBorderColor = Rgb(110, 90, 32); // #6e5a20
         public static readonly Color OffListMutedColor = Rgb(138, 138, 138);   // #8a8a8a (uncontrolled name)
+        // Amber-tinted variant of the row separator, for the off-list row (#2a2418).
+        public static readonly Color OffListSeparatorColor = Rgb(42, 36, 24);  // #2a2418
 
         // Caption separating the pinned off-list row from the switchable modules
         public const int SeparatorFontSize = 9;

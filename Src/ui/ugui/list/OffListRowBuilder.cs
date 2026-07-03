@@ -60,6 +60,10 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
+            // Discreet bottom separator line (amber-tinted, matching the off-list accent). The off-list
+            // row is always followed by the modules (or the empty state), so it is never the last row.
+            RowElements.BuildRowSeparator(rowGo.transform, Palette.OffListSeparatorColor);
+
             RowElements.BuildAccentBar(rowGo.transform, Palette.OffListAccentColor);
 
             // Stock vessel-type sprite of the control point (a docking port shows its own icon); the

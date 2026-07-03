@@ -55,6 +55,29 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             iconImg.raycastTarget = false;
         }
 
+        /// <summary>Thin separator line overlaid at the bottom of a row (out of layout), so rows read as
+        /// distinct entries. Returns the line GameObject so the caller can hide it on the last row.</summary>
+        public static GameObject BuildRowSeparator(Transform parent, Color color)
+        {
+            var go = new GameObject("RowSeparator", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var le = go.AddComponent<LayoutElement>();
+            le.ignoreLayout = true;
+            var rect = go.GetComponent<RectTransform>();
+            // Stretch horizontally, pinned to the bottom edge, one line tall.
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(0f, Palette.RowSeparatorThickness);
+            rect.anchoredPosition = Vector2.zero;
+            var img = go.AddComponent<Image>();
+            img.sprite = SpritesGlobal.FillSprite;
+            img.type = Image.Type.Simple;
+            img.color = color;
+            img.raycastTarget = false;
+            return go;
+        }
+
         /// <summary>Left accent bar overlaid on the row (out of layout), used to mark the controlling
         /// module (accent color) and the off-list control point (off-list color).</summary>
         public static void BuildAccentBar(Transform parent, Color color)

@@ -60,6 +60,9 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
+            // Discreet bottom separator line (hidden on the last row by the ListController).
+            GameObject separator = RowElements.BuildRowSeparator(rowGo.transform, Palette.RowSeparatorColor);
+
             // Left accent bar on the controlling module (overlaid, out of layout).
             if (_info.IsActive)
             {
@@ -76,7 +79,8 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             var pointer = rowGo.AddComponent<PointerHandler>();
             Color hoverColor = _info.IsActive ? Palette.RowActiveBgColor : Palette.RowHoverColor;
             return rowGo.AddComponent<RowController>()
-                .WithHover(bg, bg.color, hoverColor, pointer);
+                .WithHover(bg, bg.color, hoverColor, pointer)
+                .WithSeparator(separator);
         }
 
         // ===========================================

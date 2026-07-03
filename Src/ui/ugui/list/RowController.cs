@@ -16,6 +16,21 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
         private Color _baseColor;
         private Color _hoverColor;
         private PointerHandler _pointer;
+        private GameObject _separator;
+
+        /// <summary>Registers the row's bottom separator line so the <see cref="ListController"/> can
+        /// hide it on the last row (no trailing line under the list).</summary>
+        public RowController WithSeparator(GameObject separator)
+        {
+            _separator = separator;
+            return this;
+        }
+
+        /// <summary>Hides the bottom separator line (used on the last row of the list).</summary>
+        public void HideSeparator()
+        {
+            if (_separator != null) _separator.SetActive(false);
+        }
 
         /// <summary>Wires the row's hover feedback: <paramref name="bg"/> is tinted to
         /// <paramref name="hoverColor"/> while hovered and back to <paramref name="baseColor"/> on exit
