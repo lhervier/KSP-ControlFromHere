@@ -18,7 +18,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui
 
         public PopupController Build()
         {
-            return new PopupBuilder<TitleBarController, ContentController>()
+            return new PopupBuilder<TitleBarController, ContentController, MonoBehaviour>()
                 .WithPopupID(DIALOG_ID)
                 .WithTitle(ModLocalization.GetString("windowTitle"))
                 .WithIcon(LoadIcon())
