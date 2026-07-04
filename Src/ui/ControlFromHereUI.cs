@@ -17,7 +17,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
         private static readonly ModLogger LOGGER = new ModLogger("UI");
 
         private ApplicationLauncherButton _toolbarButton;
-        private ControlWindow _window;
+        private ControlFromHereWindow _window;
 
         // Blinks the toolbar icon red while the thrust breaker is tripped.
         private ToolbarWarningAnimator _warningAnimator;
@@ -37,7 +37,7 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
 
             RegisterSprites();
 
-            _window = new ControlWindow();
+            _window = new ControlFromHereWindow();
             _window.OnClosed.Add(OnWindowClosed);
 
             GameEvents.onGUIApplicationLauncherReady.Add(OnLauncherReady);

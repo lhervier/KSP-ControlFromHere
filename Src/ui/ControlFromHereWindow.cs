@@ -2,14 +2,15 @@ using UnityEngine;
 using com.github.lhervier.ksp.controlfromheremod.ui.styles;
 using com.github.lhervier.ksp.shared;
 using com.github.lhervier.ksp.shared.ugui.popup;
+using com.github.lhervier.ksp.controlfromheremod.ui.ugui;
 
-namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui
+namespace com.github.lhervier.ksp.controlfromheremod.ui
 {
     /// <summary>
     /// Lifecycle of the uGUI window: lazy spawn, show/hide, and OnClosed notification. The low-level
     /// mechanics (PopupDialog, Escape close, scene change) are delegated to the shared PopupController.
     /// </summary>
-    public sealed class ControlWindow
+    public sealed class ControlFromHereWindow
     {
         private const string DIALOG_ID = "ControlFromHereUGUI";
 
