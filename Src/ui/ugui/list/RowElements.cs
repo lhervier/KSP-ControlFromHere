@@ -1,16 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using com.github.lhervier.ksp.controlfromheremod.ui.styles;
-using com.github.lhervier.ksp.shared.ugui;
+using com.github.lhervier.ksp.shared;
+using com.github.lhervier.ksp.shared.ugui.badge;
 using com.github.lhervier.ksp.shared.ugui.sprites;
+using com.github.lhervier.ksp.shared.ugui.styles;
 
 namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 {
     /// <summary>
     /// Reusable sub-elements shared by the row builders (<see cref="RowBuilder"/> for command modules and
     /// <see cref="OffListRowBuilder"/> for the off-list control point): the bordered vessel-type icon box,
-    /// the small rounded chips (priority tag, "Piloting" badge, "Off-list" tag) and the left accent bar.
+    /// the shared "Piloting" badge and the left accent bar. Small labelled chips are built directly from
+    /// the shared <see cref="BadgeBuilder"/>.
     /// </summary>
     internal static class RowElements
     {
@@ -99,45 +101,18 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
             img.raycastTarget = false;
         }
 
-        /// <summary>Small rounded chip: sliced border image + centered colored label. Width driven by
-        /// its content. Returns the chip GameObject so callers can attach a tooltip.</summary>
-        public static GameObject BuildChip(
-            Transform parent,
-            string objectName,
-            string text,
-            Color textColor,
-            Color bgColor,
-            Color borderColor,
-            int borderThickness,
-            int fontSize,
-            float paddingH)
+        /// <summary>The "Piloting" accent badge, shared by the command-module row and the off-list row.</summary>
+        public static void BuildPilotingBadge(Transform parent)
         {
-            var chipGo = new GameObject(objectName, typeof(RectTransform));
-            chipGo.transform.SetParent(parent, false);
-
-            var image = chipGo.AddComponent<Image>();
-            image.sprite = SpritesGlobal.Border(bgColor, borderColor, borderThickness);
-            image.type = Image.Type.Sliced;
-            image.color = Color.white;
-            image.raycastTarget = true;   // so a tooltip can be hovered
-
-            var layout = chipGo.AddComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(Mathf.RoundToInt(paddingH), Mathf.RoundToInt(paddingH), 1, 1);
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-
-            var labelGo = new GameObject("Label", typeof(RectTransform));
-            labelGo.transform.SetParent(chipGo.transform, false);
-            var label = UGUILabels.AddLabel(labelGo);
-            label.text = text;
-            label.fontSize = fontSize;
-            label.color = textColor;
-            label.alignment = TextAlignmentOptions.Center;
-
-            return chipGo;
+            new BadgeBuilder()
+                .WithParent(parent)
+                .WithObjectName("PilotingBadge")
+                .WithText(ModLocalization.GetString("badgePiloting").ToUpperInvariant())
+                .WithColors(DefaultPalette.AccentColor, DefaultPalette.AccentBgColor, DefaultPalette.AccentBorderColor)
+                .WithBorderThickness(Palette.BadgeBorderThickness)
+                .WithFontSize(Palette.BadgeFontSize)
+                .WithPadding(Palette.BadgePaddingH, 1)
+                .Build();
         }
     }
 }

@@ -4,6 +4,7 @@ using TMPro;
 using com.github.lhervier.ksp.controlfromheremod.ui.styles;
 using com.github.lhervier.ksp.shared;
 using com.github.lhervier.ksp.shared.ugui;
+using com.github.lhervier.ksp.shared.ugui.badge;
 using com.github.lhervier.ksp.shared.ugui.button;
 using com.github.lhervier.ksp.shared.ugui.sprites;
 using com.github.lhervier.ksp.shared.ugui.styles;
@@ -157,61 +158,49 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 
         private void BuildPriorityTag(Transform parent)
         {
-            GameObject chip = RowElements.BuildChip(
-                parent,
-                "PriorityTag",
-                "P" + _info.NamingPriority,
-                Palette.PrioTextColor,
-                Palette.PrioBgColor,
-                Palette.PrioBorderColor,
-                Palette.PrioBorderThickness,
-                Palette.PrioFontSize,
-                Palette.PrioPaddingH);
-            Tooltips.Attach(chip, ModLocalization.GetString("tooltipPriority"));
+            new BadgeBuilder()
+                .WithParent(parent)
+                .WithObjectName("PriorityTag")
+                .WithText("P" + _info.NamingPriority)
+                .WithColors(Palette.PrioTextColor, Palette.PrioBgColor, Palette.PrioBorderColor)
+                .WithBorderThickness(Palette.PrioBorderThickness)
+                .WithFontSize(Palette.PrioFontSize)
+                .WithPadding(Palette.PrioPaddingH, 1)
+                .WithTooltip(ModLocalization.GetString("tooltipPriority"))
+                .Build();
         }
 
         private void BuildControlPointTag(Transform parent)
         {
-            GameObject chip = RowElements.BuildChip(
-                parent,
-                "ControlPointTag",
-                _info.ControlPointLabel,
-                Palette.ControlPointColor,
-                Palette.ControlPointBgColor,
-                Palette.ControlPointBorderColor,
-                Palette.ControlPointBorderThickness,
-                Palette.ControlPointFontSize,
-                Palette.ControlPointPaddingH);
-            Tooltips.Attach(chip, ModLocalization.GetString("tooltipControlPoint"));
+            new BadgeBuilder()
+                .WithParent(parent)
+                .WithObjectName("ControlPointTag")
+                .WithText(_info.ControlPointLabel)
+                .WithColors(Palette.ControlPointColor, Palette.ControlPointBgColor, Palette.ControlPointBorderColor)
+                .WithBorderThickness(Palette.ControlPointBorderThickness)
+                .WithFontSize(Palette.ControlPointFontSize)
+                .WithPadding(Palette.ControlPointPaddingH, 1)
+                .WithTooltip(ModLocalization.GetString("tooltipControlPoint"))
+                .Build();
         }
 
         private void BuildAlignedChip(Transform parent)
         {
-            GameObject chip = RowElements.BuildChip(
-                parent,
-                "AlignedTag",
-                CheckGlyph + " " + ModLocalization.GetString("badgeAligned"),
-                Palette.AlignedTextColor,
-                Palette.AlignedBgColor,
-                Palette.AlignedBorderColor,
-                Palette.AlignedBorderThickness,
-                Palette.AlignedFontSize,
-                Palette.AlignedPaddingH);
-            Tooltips.Attach(chip, ModLocalization.GetString("tooltipAligned"));
+            new BadgeBuilder()
+                .WithParent(parent)
+                .WithObjectName("AlignedTag")
+                .WithText(CheckGlyph + " " + ModLocalization.GetString("badgeAligned"))
+                .WithColors(Palette.AlignedTextColor, Palette.AlignedBgColor, Palette.AlignedBorderColor)
+                .WithBorderThickness(Palette.AlignedBorderThickness)
+                .WithFontSize(Palette.AlignedFontSize)
+                .WithPadding(Palette.AlignedPaddingH, 1)
+                .WithTooltip(ModLocalization.GetString("tooltipAligned"))
+                .Build();
         }
 
         private void BuildPilotingBadge(Transform parent)
         {
-            RowElements.BuildChip(
-                parent,
-                "PilotingBadge",
-                ModLocalization.GetString("badgePiloting").ToUpperInvariant(),
-                DefaultPalette.AccentColor,
-                DefaultPalette.AccentBgColor,
-                DefaultPalette.AccentBorderColor,
-                Palette.BadgeBorderThickness,
-                Palette.BadgeFontSize,
-                Palette.BadgePaddingH);
+            RowElements.BuildPilotingBadge(parent);
         }
 
         private void BuildActions(Transform parent)

@@ -4,6 +4,7 @@ using TMPro;
 using com.github.lhervier.ksp.controlfromheremod.ui.styles;
 using com.github.lhervier.ksp.shared;
 using com.github.lhervier.ksp.shared.ugui;
+using com.github.lhervier.ksp.shared.ugui.badge;
 using com.github.lhervier.ksp.shared.ugui.button;
 using com.github.lhervier.ksp.shared.ugui.sprites;
 using com.github.lhervier.ksp.shared.ugui.styles;
@@ -138,31 +139,21 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui.list
 
         private void BuildOffListTag(Transform parent)
         {
-            GameObject chip = RowElements.BuildChip(
-                parent,
-                "OffListTag",
-                ModLocalization.GetString("badgeOffList").ToUpperInvariant(),
-                Palette.OffListAccentColor,
-                Palette.OffListTagBgColor,
-                Palette.OffListTagBorderColor,
-                Palette.BadgeBorderThickness,
-                Palette.BadgeFontSize,
-                Palette.BadgePaddingH);
-            Tooltips.Attach(chip, ModLocalization.GetString("tooltipOffList"));
+            new BadgeBuilder()
+                .WithParent(parent)
+                .WithObjectName("OffListTag")
+                .WithText(ModLocalization.GetString("badgeOffList").ToUpperInvariant())
+                .WithColors(Palette.OffListAccentColor, Palette.OffListTagBgColor, Palette.OffListTagBorderColor)
+                .WithBorderThickness(Palette.BadgeBorderThickness)
+                .WithFontSize(Palette.BadgeFontSize)
+                .WithPadding(Palette.BadgePaddingH, 1)
+                .WithTooltip(ModLocalization.GetString("tooltipOffList"))
+                .Build();
         }
 
         private void BuildPilotingBadge(Transform parent)
         {
-            RowElements.BuildChip(
-                parent,
-                "PilotingBadge",
-                ModLocalization.GetString("badgePiloting").ToUpperInvariant(),
-                DefaultPalette.AccentColor,
-                DefaultPalette.AccentBgColor,
-                DefaultPalette.AccentBorderColor,
-                Palette.BadgeBorderThickness,
-                Palette.BadgeFontSize,
-                Palette.BadgePaddingH);
+            RowElements.BuildPilotingBadge(parent);
         }
 
         private void BuildActions(Transform parent)
