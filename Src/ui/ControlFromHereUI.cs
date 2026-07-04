@@ -1,29 +1,32 @@
 using KSP.UI.Screens;
 using UnityEngine;
 using com.github.lhervier.ksp.controlfromheremod.breaker;
+using com.github.lhervier.ksp.controlfromheremod.ui.styles;
 using com.github.lhervier.ksp.controlfromheremod.ui.ugui;
 using com.github.lhervier.ksp.shared;
+using com.github.lhervier.ksp.shared.ugui.popup;
 using com.github.lhervier.ksp.shared.ugui.sprites;
 
 namespace com.github.lhervier.ksp.controlfromheremod.ui
 {
     /// <summary>
-    /// Entry point in flight: the toolbar button and the uGUI window it toggles. Keeps the toolbar toggle
-    /// and the window visibility in sync, including when KSP closes the window itself (Escape).
+    /// Entry point in flight: the toolbar button and the uGUI window it toggles. The window is driven by a
+    /// (shared) PopupController that handles its own lazy spawn, position, and open state; we only open/close
+    /// it and react to OnOpenChanged to keep the toolbar toggle in sync (including when KSP closes the window
+    /// itself via Escape, or when it is restored open at scene load).
     /// </summary>
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class ControlFromHereUI : MonoBehaviour
     {
         private static readonly ModLogger LOGGER = new ModLogger("UI");
 
+        private const string DIALOG_ID = "ControlFromHereUGUI";
+
         private ApplicationLauncherButton _toolbarButton;
-        private ControlFromHereWindow _window;
+        private PopupController _popupController;
 
         // Blinks the toolbar icon red while the thrust breaker is tripped.
         private ToolbarWarningAnimator _warningAnimator;
-
-        // Single source of truth for the displayed state; guards against the toolbar/window resync loop.
-        private bool _visible;
 
         // Previous breaker "tripped" reading, to reveal the window on the rising edge of a trip.
         private bool _wasTripped;
@@ -37,8 +40,23 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
 
             RegisterSprites();
 
-            _window = new ControlFromHereWindow();
-            _window.OnClosed.Add(OnWindowClosed);
+            // The popup controller is a component on THIS GameObject: it survives KSP destroying the window
+            // (Escape) and persists its own open state, so we no longer track visibility ourselves.
+            _popupController = new PopupBuilder<TitleBarController, ContentController, MonoBehaviour>()
+                .WithHost(this.gameObject)
+                .WithPopupID(DIALOG_ID)
+                .WithTitle(ModLocalization.GetString("windowTitle"))
+                .WithIcon(LoadIcon())
+                .WithTitleBarBuilder(new TitleBarBuilder())
+                .WithContentBuilder(new ContentBuilder())
+                .WithSize(new Vector2(Palette.WindowWidth, Palette.WindowHeight))
+                .Build();
+            // The controller restores its own open state (in its Start, after this method returns), so we
+            // only subscribe: a restored-open window then syncs the toolbar through this handler.
+            if (_popupController != null)
+            {
+                _popupController.OnOpenChanged.Add(OnPopupOpenChanged);
+            }
 
             GameEvents.onGUIApplicationLauncherReady.Add(OnLauncherReady);
             LOGGER.LogInfo("Started");
@@ -88,11 +106,12 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
 
             RemoveToolbarButton();
 
-            if (_window != null)
+            // _popupController is a component on this GO: Unity destroys it with us, and it dismisses a
+            // still-open window in its own OnDestroy. We only drop our reference and unsubscribe.
+            if (_popupController != null)
             {
-                _window.OnClosed.Remove(OnWindowClosed);
-                _window.Destroy();
-                _window = null;
+                _popupController.OnOpenChanged.Remove(OnPopupOpenChanged);
+                _popupController = null;
             }
         }
 
@@ -121,6 +140,13 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
             {
                 LOGGER.LogError("Error creating toolbar button: " + e.Message);
             }
+
+            // The launcher may become ready after the window state was restored at scene load: press the
+            // button now to reflect an already-open window (false: no callback).
+            if (_toolbarButton != null && _popupController != null && _popupController.IsOpen)
+            {
+                _toolbarButton.SetTrue(false);
+            }
         }
 
         private void RemoveToolbarButton()
@@ -146,44 +172,54 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui
 
         private void OnToggleOn()
         {
-            if (_visible) return;
-            _visible = true;
-            _window.Show();
+            if (_popupController != null) _popupController.Show();
         }
 
         private void OnToggleOff()
         {
-            if (!_visible) return;
-            _visible = false;
-            _window.Hide();
+            if (_popupController != null) _popupController.Hide();
         }
 
-        // Reveal the window (e.g. the breaker just tripped). Going through the toolbar toggle keeps it in
-        // sync; if the button isn't up yet SetTrue fires OnToggleOn which shows the window. When there is no
-        // toolbar button, show directly.
+        // Reveal the window (e.g. the breaker just tripped). The open transition syncs the toolbar through
+        // OnOpenChanged.
         private void RevealWindow()
         {
-            if (_toolbarButton != null)
+            if (_popupController != null) _popupController.Show();
+        }
+
+        // The window's open state changed (button, ×, Escape, or restore-at-load): keep the toolbar button
+        // pressed state in sync. SetTrue/SetFalse(false): do not re-fire the toggle callbacks.
+        private void OnPopupOpenChanged()
+        {
+            if (_toolbarButton == null)
             {
-                _toolbarButton.SetTrue();
                 return;
             }
-            if (!_visible)
+            if (_popupController != null && _popupController.IsOpen)
             {
-                _visible = true;
-                _window.Show();
+                _toolbarButton.SetTrue(false);
+            }
+            else
+            {
+                _toolbarButton.SetFalse(false);
             }
         }
 
-        // Window stopped being shown (our Hide, or a KSP/Escape close): resync the toolbar toggle.
-        private void OnWindowClosed()
+        // The mod's toolbar icon, reused as the window's title-bar icon. Null when the texture is missing.
+        private static Sprite LoadIcon()
         {
-            if (!_visible) return;
-            _visible = false;
-            if (_toolbarButton != null)
+            Texture2D tex = GameDatabase.Instance != null
+                ? GameDatabase.Instance.GetTexture(Constants.ModName + "/icon", false)
+                : null;
+            if (tex == null)
             {
-                _toolbarButton.SetFalse();
+                return null;
             }
+            return Sprite.Create(
+                tex,
+                new Rect(0f, 0f, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f),
+                100f);
         }
     }
 }
