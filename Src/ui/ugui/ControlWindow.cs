@@ -1,14 +1,18 @@
+using UnityEngine;
+using com.github.lhervier.ksp.controlfromheremod.ui.styles;
+using com.github.lhervier.ksp.shared;
 using com.github.lhervier.ksp.shared.ugui.popup;
 
 namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui
 {
     /// <summary>
-    /// Lifecycle of the uGUI window: lazy spawn through ModPopupBuilder, show/hide, and OnClosed
-    /// notification. The low-level mechanics (PopupDialog, Escape close, scene change) are delegated to the
-    /// shared PopupController.
+    /// Lifecycle of the uGUI window: lazy spawn, show/hide, and OnClosed notification. The low-level
+    /// mechanics (PopupDialog, Escape close, scene change) are delegated to the shared PopupController.
     /// </summary>
     public sealed class ControlWindow
     {
+        private const string DIALOG_ID = "ControlFromHereUGUI";
+
         private PopupController _popup;
 
         /// <summary>Fired whenever the window stops being shown (hidden by us, or closed by KSP/Escape).</summary>
@@ -20,7 +24,14 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui
             // null here, which triggers a fresh spawn.
             if (_popup == null)
             {
-                _popup = new ModPopupBuilder().Build();
+                _popup = new PopupBuilder<TitleBarController, ContentController, MonoBehaviour>()
+                    .WithPopupID(DIALOG_ID)
+                    .WithTitle(ModLocalization.GetString("windowTitle"))
+                    .WithIcon(LoadIcon())
+                    .WithTitleBarBuilder(new TitleBarBuilder())
+                    .WithContentBuilder(new ContentBuilder())
+                    .WithSize(new Vector2(Palette.WindowWidth, Palette.WindowHeight))
+                    .Build();
                 if (_popup == null) return;   // KSP spawn failed
                 _popup.OnClosed.Add(OnPopupClosed);
             }
@@ -48,6 +59,23 @@ namespace com.github.lhervier.ksp.controlfromheremod.ui.ugui
         private void OnPopupClosed()
         {
             OnClosed.Fire();
+        }
+
+        // The mod's toolbar icon, reused as the window's title-bar icon. Null when the texture is missing.
+        private static Sprite LoadIcon()
+        {
+            Texture2D tex = GameDatabase.Instance != null
+                ? GameDatabase.Instance.GetTexture(Constants.ModName + "/icon", false)
+                : null;
+            if (tex == null)
+            {
+                return null;
+            }
+            return Sprite.Create(
+                tex,
+                new Rect(0f, 0f, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f),
+                100f);
         }
     }
 }
